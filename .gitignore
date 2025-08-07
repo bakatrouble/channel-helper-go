@@ -1,0 +1,6 @@
+.idea
+/config/*
+/dbs/*
+!.gitkeep
+/channel-helper-go
+/lib/*.so

@@ -1,0 +1,18 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  build:
+    deps:
+      - rustlib-build
+    cmds:
+      - go build -ldflags="-r lib" .
+  rustlib-build:
+    dir: lib/imagehash
+    cmds:
+      - cargo build --release
+      - cp target/release/libimagehash.so ../
+  generate:
+    cmds:
+      - go run -mod=mod entgo.io/ent/cmd/ent generate ./ent/schema

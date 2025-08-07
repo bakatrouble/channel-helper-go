@@ -19,8 +19,8 @@ type GifHandlerUrlPayload struct {
 }
 
 func GifHandler(c *gin.Context) {
-	db := c.Value("db").(*ent.Client)
-	uploadTaskChannel := c.Value("uploadTaskChannel").(chan *ent.UploadTask)
+	db := c.MustGet("db").(*ent.Client)
+	uploadTaskChannel := c.MustGet("uploadTaskChannel").(chan *ent.UploadTask)
 
 	var gifBytes []byte
 	if fileHeader, err := c.FormFile("upload"); err == nil {
@@ -29,7 +29,7 @@ func GifHandler(c *gin.Context) {
 			_ = file.Close()
 		}(file)
 		gifBytes = make([]byte, fileHeader.Size)
-		_, err := file.Read(gifBytes)
+		_, err = file.Read(gifBytes)
 		if err != nil {
 			c.JSON(500, gin.H{"status": "error", "message": "Failed to read file"})
 			return

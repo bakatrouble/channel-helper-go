@@ -25,14 +25,24 @@ func StartWebAPI(ctx context.Context) {
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB
 
-	router.Use(func(c *gin.Context) {
+	g := router.Group("/:api_key")
+
+	g.Use(func(c *gin.Context) {
+		apiKey := c.Param("api_key")
+		if apiKey != config.ApiKey {
+			c.JSON(403, gin.H{"status": "error", "message": "Forbidden"})
+			c.Abort()
+			return
+		}
 		c.Set("config", config)
 		c.Set("db", db)
 		c.Set("uploadTaskChannel", uploadTaskChannel)
+		c.Next()
 	})
 
-	router.POST("/photo", handlers.PhotoHandler)
-	router.POST("/gif", handlers.GifHandler)
+	g.POST("/photo", handlers.PhotoHandler)
+	g.POST("/gif", handlers.GifHandler)
+	g.GET("/hashes", handlers.HashesHandler)
 
 	_ = router.RunWithContext(ctx)
 }

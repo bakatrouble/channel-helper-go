@@ -56,6 +56,7 @@ func StartBot(ctx context.Context) {
 	bh.HandleMessage(handlers.AnimationHandler, messageWithAnimation)
 	bh.HandleMessage(handlers.VideoHandler, messageWithVideo)
 	bh.HandleMessage(handlers.DeleteHandler, messageCommands([]string{"delete", "del", "remove", "rem", "rm"}))
+	bh.HandleMessage(handlers.CountHandler, messageCommands([]string{"count", "cnt"}))
 	bh.HandleMessage(handlers.UnknownHandler, th.AnyMessage())
 	bh.HandleCallbackQuery(handlers.DeleteCallbackHandler, th.CallbackDataEqual("/delete"))
 

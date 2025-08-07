@@ -27,8 +27,8 @@ type PhotoHandlerUrlPayload struct {
 }
 
 func PhotoHandler(c *gin.Context) {
-	db := c.Value("db").(*ent.Client)
-	uploadTaskChannel := c.Value("uploadTaskChannel").(chan *ent.UploadTask)
+	db := c.MustGet("db").(*ent.Client)
+	uploadTaskChannel := c.MustGet("uploadTaskChannel").(chan *ent.UploadTask)
 
 	var imageBytes []byte
 	if fileHeader, err := c.FormFile("upload"); err == nil {

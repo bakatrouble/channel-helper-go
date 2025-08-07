@@ -23,7 +23,7 @@ import (
 type ImportItem struct {
 	Type       post.Type `json:"type"`
 	FileId     string    `json:"file_id"`
-	MessageIds []int32   `json:"message_ids"`
+	MessageIds []int     `json:"message_ids"`
 	Processed  bool      `json:"processed"`
 	Datetime   time.Time `json:"datetime"`
 }

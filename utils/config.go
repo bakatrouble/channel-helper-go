@@ -14,6 +14,7 @@ type Config struct {
 	Interval           time.Duration `yaml:"interval"`
 	GroupThreshold     int           `yaml:"group_threshold"`
 	WithApi            bool          `yaml:"with_api"`
+	ApiKey             string        `yaml:"api_key"`
 	ApiPort            int           `yaml:"api_port"`
 	UploadChatId       int64         `yaml:"upload_chat_id"`
 }

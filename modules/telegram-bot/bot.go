@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+	"strings"
 	"sync"
 )
 
@@ -33,7 +34,9 @@ func StartBot(ctx context.Context) {
 	bh.HandleMessage(handlers.PhotoHandler, messageWithPhoto)
 	bh.HandleMessage(handlers.AnimationHandler, messageWithAnimation)
 	bh.HandleMessage(handlers.VideoHandler, messageWithVideo)
+	bh.HandleMessage(handlers.DeleteHandler, messageCommands([]string{"delete", "del", "remove", "rem", "rm"}))
 	bh.HandleMessage(handlers.UnknownHandler, th.AnyMessage())
+	bh.HandleCallbackQuery(handlers.DeleteCallbackHandler, th.CallbackDataEqual("/delete"))
 
 	_ = bh.Start()
 }
@@ -48,4 +51,24 @@ func messageWithVideo(_ context.Context, update telego.Update) bool {
 
 func messageWithPhoto(_ context.Context, update telego.Update) bool {
 	return update.Message != nil && len(update.Message.Photo) > 0
+}
+
+func messageCommands(commands []string) th.Predicate {
+	return func(_ context.Context, update telego.Update) bool {
+		if update.Message == nil {
+			return false
+		}
+
+		matches := th.CommandRegexp.FindStringSubmatch(update.Message.Text)
+		if len(matches) != th.CommandMatchGroupsLen {
+			return false
+		}
+
+		for _, command := range commands {
+			if strings.EqualFold(matches[th.CommandMatchCmdGroup], command) {
+				return true
+			}
+		}
+		return false
+	}
 }

@@ -776,8 +776,8 @@ type PostMessageIdMutation struct {
 	id            *int
 	chat_id       *int64
 	addchat_id    *int64
-	message_id    *int32
-	addmessage_id *int32
+	message_id    *int
+	addmessage_id *int
 	clearedFields map[string]struct{}
 	post          *uuidv7.UUID
 	clearedpost   bool
@@ -941,13 +941,13 @@ func (m *PostMessageIdMutation) ResetChatID() {
 }
 
 // SetMessageID sets the "message_id" field.
-func (m *PostMessageIdMutation) SetMessageID(i int32) {
+func (m *PostMessageIdMutation) SetMessageID(i int) {
 	m.message_id = &i
 	m.addmessage_id = nil
 }
 
 // MessageID returns the value of the "message_id" field in the mutation.
-func (m *PostMessageIdMutation) MessageID() (r int32, exists bool) {
+func (m *PostMessageIdMutation) MessageID() (r int, exists bool) {
 	v := m.message_id
 	if v == nil {
 		return
@@ -958,7 +958,7 @@ func (m *PostMessageIdMutation) MessageID() (r int32, exists bool) {
 // OldMessageID returns the old "message_id" field's value of the PostMessageId entity.
 // If the PostMessageId object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostMessageIdMutation) OldMessageID(ctx context.Context) (v int32, err error) {
+func (m *PostMessageIdMutation) OldMessageID(ctx context.Context) (v int, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldMessageID is only allowed on UpdateOne operations")
 	}
@@ -973,7 +973,7 @@ func (m *PostMessageIdMutation) OldMessageID(ctx context.Context) (v int32, err 
 }
 
 // AddMessageID adds i to the "message_id" field.
-func (m *PostMessageIdMutation) AddMessageID(i int32) {
+func (m *PostMessageIdMutation) AddMessageID(i int) {
 	if m.addmessage_id != nil {
 		*m.addmessage_id += i
 	} else {
@@ -982,7 +982,7 @@ func (m *PostMessageIdMutation) AddMessageID(i int32) {
 }
 
 // AddedMessageID returns the value that was added to the "message_id" field in this mutation.
-func (m *PostMessageIdMutation) AddedMessageID() (r int32, exists bool) {
+func (m *PostMessageIdMutation) AddedMessageID() (r int, exists bool) {
 	v := m.addmessage_id
 	if v == nil {
 		return
@@ -1118,7 +1118,7 @@ func (m *PostMessageIdMutation) SetField(name string, value ent.Value) error {
 		m.SetChatID(v)
 		return nil
 	case postmessageid.FieldMessageID:
-		v, ok := value.(int32)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1167,7 +1167,7 @@ func (m *PostMessageIdMutation) AddField(name string, value ent.Value) error {
 		m.AddChatID(v)
 		return nil
 	case postmessageid.FieldMessageID:
-		v, ok := value.(int32)
+		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

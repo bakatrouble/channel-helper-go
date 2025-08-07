@@ -21,7 +21,7 @@ type PostMessageId struct {
 	// ChatID holds the value of the "chat_id" field.
 	ChatID int64 `json:"chat_id,omitempty"`
 	// MessageID holds the value of the "message_id" field.
-	MessageID int32 `json:"message_id,omitempty"`
+	MessageID int `json:"message_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PostMessageIdQuery when eager-loading is set.
 	Edges            PostMessageIdEdges `json:"edges"`
@@ -89,7 +89,7 @@ func (_m *PostMessageId) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field message_id", values[i])
 			} else if value.Valid {
-				_m.MessageID = int32(value.Int64)
+				_m.MessageID = int(value.Int64)
 			}
 		case postmessageid.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {

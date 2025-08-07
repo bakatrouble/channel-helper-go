@@ -11,16 +11,17 @@ func AnimationHandler(ctx *th.Context, message telego.Message) error {
 	println("AnimationHandler called")
 	db, _ := ctx.Value("db").(*ent.Client)
 
-	err := db.Post.Create().
+	createdPost, err := db.Post.Create().
 		SetType(post.TypeAnimation).
 		SetFileID(message.Animation.FileID).
-		Exec(ctx)
+		Save(ctx)
 	if err != nil {
 		println("Failed to create post:", err.Error())
 		return err
 	}
+	_ = createPostMessageId(ctx, createdPost, &message)
 
-	reactToMessage(ctx, message)
+	reactToMessage(ctx, &message)
 
 	return nil
 }

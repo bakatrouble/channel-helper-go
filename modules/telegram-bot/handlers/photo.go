@@ -40,7 +40,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	}
 	if duplicate {
 		if dPost != nil {
-			_, _ = bot.SendPhoto(ctx, tu.Photo(
+			newMsg, err := bot.SendPhoto(ctx, tu.Photo(
 				message.Chat.ChatID(),
 				telego.InputFile{
 					FileID: dPost.FileID,
@@ -53,6 +53,10 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 					MessageID: message.MessageID,
 					ChatID:    message.Chat.ChatID(),
 				}))
+			if err != nil {
+				_ = createPostMessageId(ctx, dPost, &message)
+				_ = createPostMessageId(ctx, dPost, newMsg)
+			}
 			return errors.New("duplicate image hash")
 		} else if dUploadTask != nil {
 			_, _ = bot.SendMessage(ctx, tu.Message(
@@ -67,17 +71,18 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 		}
 	}
 
-	err = db.Post.Create().
+	createdPost, err := db.Post.Create().
 		SetType(post.TypePhoto).
 		SetFileID(message.Photo[len(message.Photo)-1].FileID).
 		SetImageHash(hash).
-		Exec(ctx)
+		Save(ctx)
 	if err != nil {
 		println("Failed to create post:", err.Error())
 		return err
 	}
+	_ = createPostMessageId(ctx, createdPost, &message)
 
-	reactToMessage(ctx, message)
+	reactToMessage(ctx, &message)
 
 	return nil
 }

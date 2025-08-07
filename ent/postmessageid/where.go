@@ -60,7 +60,7 @@ func ChatID(v int64) predicate.PostMessageId {
 }
 
 // MessageID applies equality check predicate on the "message_id" field. It's identical to MessageIDEQ.
-func MessageID(v int32) predicate.PostMessageId {
+func MessageID(v int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldEQ(FieldMessageID, v))
 }
 
@@ -105,42 +105,42 @@ func ChatIDLTE(v int64) predicate.PostMessageId {
 }
 
 // MessageIDEQ applies the EQ predicate on the "message_id" field.
-func MessageIDEQ(v int32) predicate.PostMessageId {
+func MessageIDEQ(v int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldEQ(FieldMessageID, v))
 }
 
 // MessageIDNEQ applies the NEQ predicate on the "message_id" field.
-func MessageIDNEQ(v int32) predicate.PostMessageId {
+func MessageIDNEQ(v int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldNEQ(FieldMessageID, v))
 }
 
 // MessageIDIn applies the In predicate on the "message_id" field.
-func MessageIDIn(vs ...int32) predicate.PostMessageId {
+func MessageIDIn(vs ...int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldIn(FieldMessageID, vs...))
 }
 
 // MessageIDNotIn applies the NotIn predicate on the "message_id" field.
-func MessageIDNotIn(vs ...int32) predicate.PostMessageId {
+func MessageIDNotIn(vs ...int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldNotIn(FieldMessageID, vs...))
 }
 
 // MessageIDGT applies the GT predicate on the "message_id" field.
-func MessageIDGT(v int32) predicate.PostMessageId {
+func MessageIDGT(v int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldGT(FieldMessageID, v))
 }
 
 // MessageIDGTE applies the GTE predicate on the "message_id" field.
-func MessageIDGTE(v int32) predicate.PostMessageId {
+func MessageIDGTE(v int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldGTE(FieldMessageID, v))
 }
 
 // MessageIDLT applies the LT predicate on the "message_id" field.
-func MessageIDLT(v int32) predicate.PostMessageId {
+func MessageIDLT(v int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldLT(FieldMessageID, v))
 }
 
 // MessageIDLTE applies the LTE predicate on the "message_id" field.
-func MessageIDLTE(v int32) predicate.PostMessageId {
+func MessageIDLTE(v int) predicate.PostMessageId {
 	return predicate.PostMessageId(sql.FieldLTE(FieldMessageID, v))
 }
 

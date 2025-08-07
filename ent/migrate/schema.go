@@ -45,7 +45,7 @@ var (
 	PostMessageIdsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "chat_id", Type: field.TypeInt64},
-		{Name: "message_id", Type: field.TypeInt32},
+		{Name: "message_id", Type: field.TypeInt},
 		{Name: "post_message_ids", Type: field.TypeUUID, Nullable: true},
 	}
 	// PostMessageIdsTable holds the schema information for the "post_message_ids" table.

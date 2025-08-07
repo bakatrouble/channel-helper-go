@@ -51,14 +51,14 @@ func (_u *PostMessageIdUpdate) AddChatID(v int64) *PostMessageIdUpdate {
 }
 
 // SetMessageID sets the "message_id" field.
-func (_u *PostMessageIdUpdate) SetMessageID(v int32) *PostMessageIdUpdate {
+func (_u *PostMessageIdUpdate) SetMessageID(v int) *PostMessageIdUpdate {
 	_u.mutation.ResetMessageID()
 	_u.mutation.SetMessageID(v)
 	return _u
 }
 
 // SetNillableMessageID sets the "message_id" field if the given value is not nil.
-func (_u *PostMessageIdUpdate) SetNillableMessageID(v *int32) *PostMessageIdUpdate {
+func (_u *PostMessageIdUpdate) SetNillableMessageID(v *int) *PostMessageIdUpdate {
 	if v != nil {
 		_u.SetMessageID(*v)
 	}
@@ -66,7 +66,7 @@ func (_u *PostMessageIdUpdate) SetNillableMessageID(v *int32) *PostMessageIdUpda
 }
 
 // AddMessageID adds value to the "message_id" field.
-func (_u *PostMessageIdUpdate) AddMessageID(v int32) *PostMessageIdUpdate {
+func (_u *PostMessageIdUpdate) AddMessageID(v int) *PostMessageIdUpdate {
 	_u.mutation.AddMessageID(v)
 	return _u
 }
@@ -144,10 +144,10 @@ func (_u *PostMessageIdUpdate) sqlSave(ctx context.Context) (_node int, err erro
 		_spec.AddField(postmessageid.FieldChatID, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.MessageID(); ok {
-		_spec.SetField(postmessageid.FieldMessageID, field.TypeInt32, value)
+		_spec.SetField(postmessageid.FieldMessageID, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AddedMessageID(); ok {
-		_spec.AddField(postmessageid.FieldMessageID, field.TypeInt32, value)
+		_spec.AddField(postmessageid.FieldMessageID, field.TypeInt, value)
 	}
 	if _u.mutation.PostCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -220,14 +220,14 @@ func (_u *PostMessageIdUpdateOne) AddChatID(v int64) *PostMessageIdUpdateOne {
 }
 
 // SetMessageID sets the "message_id" field.
-func (_u *PostMessageIdUpdateOne) SetMessageID(v int32) *PostMessageIdUpdateOne {
+func (_u *PostMessageIdUpdateOne) SetMessageID(v int) *PostMessageIdUpdateOne {
 	_u.mutation.ResetMessageID()
 	_u.mutation.SetMessageID(v)
 	return _u
 }
 
 // SetNillableMessageID sets the "message_id" field if the given value is not nil.
-func (_u *PostMessageIdUpdateOne) SetNillableMessageID(v *int32) *PostMessageIdUpdateOne {
+func (_u *PostMessageIdUpdateOne) SetNillableMessageID(v *int) *PostMessageIdUpdateOne {
 	if v != nil {
 		_u.SetMessageID(*v)
 	}
@@ -235,7 +235,7 @@ func (_u *PostMessageIdUpdateOne) SetNillableMessageID(v *int32) *PostMessageIdU
 }
 
 // AddMessageID adds value to the "message_id" field.
-func (_u *PostMessageIdUpdateOne) AddMessageID(v int32) *PostMessageIdUpdateOne {
+func (_u *PostMessageIdUpdateOne) AddMessageID(v int) *PostMessageIdUpdateOne {
 	_u.mutation.AddMessageID(v)
 	return _u
 }
@@ -343,10 +343,10 @@ func (_u *PostMessageIdUpdateOne) sqlSave(ctx context.Context) (_node *PostMessa
 		_spec.AddField(postmessageid.FieldChatID, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.MessageID(); ok {
-		_spec.SetField(postmessageid.FieldMessageID, field.TypeInt32, value)
+		_spec.SetField(postmessageid.FieldMessageID, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AddedMessageID(); ok {
-		_spec.AddField(postmessageid.FieldMessageID, field.TypeInt32, value)
+		_spec.AddField(postmessageid.FieldMessageID, field.TypeInt, value)
 	}
 	if _u.mutation.PostCleared() {
 		edge := &sqlgraph.EdgeSpec{

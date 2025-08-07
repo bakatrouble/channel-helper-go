@@ -16,7 +16,7 @@ type PostMessageId struct {
 func (PostMessageId) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("chat_id"),
-		field.Int32("message_id"),
+		field.Int("message_id"),
 	}
 }
 

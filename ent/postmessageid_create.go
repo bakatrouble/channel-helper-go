@@ -28,7 +28,7 @@ func (_c *PostMessageIdCreate) SetChatID(v int64) *PostMessageIdCreate {
 }
 
 // SetMessageID sets the "message_id" field.
-func (_c *PostMessageIdCreate) SetMessageID(v int32) *PostMessageIdCreate {
+func (_c *PostMessageIdCreate) SetMessageID(v int) *PostMessageIdCreate {
 	_c.mutation.SetMessageID(v)
 	return _c
 }
@@ -123,7 +123,7 @@ func (_c *PostMessageIdCreate) createSpec() (*PostMessageId, *sqlgraph.CreateSpe
 		_node.ChatID = value
 	}
 	if value, ok := _c.mutation.MessageID(); ok {
-		_spec.SetField(postmessageid.FieldMessageID, field.TypeInt32, value)
+		_spec.SetField(postmessageid.FieldMessageID, field.TypeInt, value)
 		_node.MessageID = value
 	}
 	if nodes := _c.mutation.PostIDs(); len(nodes) > 0 {

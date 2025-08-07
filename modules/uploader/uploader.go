@@ -6,7 +6,6 @@ import (
 	"channel-helper-go/ent/uploadtask"
 	"channel-helper-go/utils"
 	"context"
-	"fmt"
 	"github.com/mymmrac/telego"
 	tu "github.com/mymmrac/telego/telegoutil"
 	"sync"
@@ -28,7 +27,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 	replyMarkup := tu.InlineKeyboard(
 		tu.InlineKeyboardRow(
 			tu.InlineKeyboardButton("Delete").
-				WithCallbackData(fmt.Sprintf("/delete/%s", task.ID)),
+				WithCallbackData("/delete"),
 		),
 	)
 	var msg *telego.Message
@@ -89,7 +88,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 	}
 
 	err = tx.PostMessageId.Create().
-		SetMessageID(int32(msg.MessageID)).
+		SetMessageID(msg.MessageID).
 		SetChatID(config.UploadChatId).
 		SetPost(createdPost).
 		Exec(ctx)

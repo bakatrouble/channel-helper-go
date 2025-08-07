@@ -7,6 +7,8 @@ import (
 	"context"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+	tu "github.com/mymmrac/telego/telegoutil"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -30,6 +32,25 @@ func StartBot(ctx context.Context) {
 		ctx = ctx.WithValue("db", db)
 		ctx = ctx.WithValue("wg", wg)
 		return ctx.Next(update)
+	})
+	bh.Use(func(ctx *th.Context, update telego.Update) error {
+		if update.Message == nil {
+			return ctx.Next(update)
+		}
+
+		if update.Message.From == nil {
+			return ctx.Next(update)
+		}
+
+		if slices.Contains(config.AllowedSenderChats, update.Message.Chat.ID) {
+			return ctx.Next(update)
+		}
+
+		_, _ = bot.SendMessage(ctx, tu.Message(
+			update.Message.Chat.ChatID(),
+			"GTFO",
+		))
+		return nil
 	})
 	bh.HandleMessage(handlers.PhotoHandler, messageWithPhoto)
 	bh.HandleMessage(handlers.AnimationHandler, messageWithAnimation)

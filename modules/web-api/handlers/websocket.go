@@ -4,6 +4,8 @@ import (
 	channels "channel-helper-go/modules"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/grbit/go-json"
+	"log"
 )
 
 var upgrader = websocket.Upgrader{
@@ -24,6 +26,21 @@ func WebsocketHandler(c *gin.Context) {
 		_ = conn.Close()
 	}(conn)
 
+	msgIn := make(chan interface{})
+
+	go func(conn *websocket.Conn, channel chan interface{}) {
+		for {
+			var msg interface{}
+			err := conn.ReadJSON(&msg)
+			if websocket.IsUnexpectedCloseError(err) {
+				println("socket closed:", err.Error())
+				return
+			} else if err == nil {
+				channel <- msg
+			}
+		}
+	}(conn, msgIn)
+
 	for {
 		select {
 		case post := <-hub.PostCreated:
@@ -36,8 +53,11 @@ func WebsocketHandler(c *gin.Context) {
 			_ = conn.WriteJSON(gin.H{"type": "uploadTaskCreated", "uploadTask": uploadTask})
 		case uploadTask := <-hub.UploadTaskDone:
 			_ = conn.WriteJSON(gin.H{"type": "uploadTaskDone", "uploadTask": uploadTask})
+		case msg := <-msgIn:
+			j, _ := json.Marshal(msg)
+			log.Println("msgIn", string(j))
+		case <-c.Done():
+			return
 		}
 	}
-
-	return
 }

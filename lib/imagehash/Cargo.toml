@@ -1,0 +1,13 @@
+[package]
+name = "lib"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "imagehash"
+path = "src/lib.rs"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+imagehash = "0.3.0"
+image = { version = "0.24.8", default-features = false, features = ["jpeg", "png", "gif", "webp"] }

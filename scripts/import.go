@@ -116,6 +116,7 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 	var hashTotal int64
 	pool := pond.NewPool(runtime.NumCPU())
 	for _, item := range items {
+		importBar.Increment()
 		if existingFileIds[item.FileId] {
 			continue
 		}
@@ -152,7 +153,6 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 					SetPostID(postId),
 			)
 		}
-		importBar.Increment()
 	}
 	pool.StopAndWait()
 	hashBar.SetTotal(hashTotal, true)

@@ -3,4 +3,4 @@
 /dbs/*
 !.gitkeep
 /channel-helper-go
-/lib/*.so
+/lib/libimagehash.so

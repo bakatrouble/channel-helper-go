@@ -4,6 +4,7 @@ import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/uploadtask"
+	channels "channel-helper-go/modules"
 	"channel-helper-go/utils"
 	"context"
 	"github.com/mymmrac/telego"
@@ -16,6 +17,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
 	bot := ctx.Value("bot").(*telego.Bot)
+	chans := c.MustGet("chans").(*channels.AppChannels)
 
 	tx, err := db.Tx(ctx)
 	if err != nil {
@@ -102,6 +104,9 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 		println("Error committing transaction:", err.Error())
 		return err
 	}
+
+	chans.UploadTaskDone <- task
+	chans.PostCreated <- createdPost
 
 	return nil
 }

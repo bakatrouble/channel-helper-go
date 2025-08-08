@@ -3,6 +3,7 @@ package handlers
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
+	channels "channel-helper-go/modules"
 	"channel-helper-go/utils"
 	"errors"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	println("PhotoHandler called")
 	db, _ := ctx.Value("db").(*ent.Client)
+	chans, _ := ctx.Value("chans").(*channels.AppChannels)
 	bot := ctx.Bot()
 
 	file, err := bot.GetFile(ctx, &telego.GetFileParams{FileID: message.Photo[len(message.Photo)-1].FileID})
@@ -83,6 +85,8 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	_ = createPostMessageId(ctx, createdPost, &message)
 
 	reactToMessage(ctx, &message)
+
+	chans.PostCreated <- createdPost
 
 	return nil
 }

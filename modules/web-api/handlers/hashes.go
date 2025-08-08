@@ -19,5 +19,8 @@ func HashesHandler(c *gin.Context) {
 		return
 	}
 
+	if hashes == nil {
+		hashes = []string{}
+	}
 	c.JSON(200, gin.H{"status": "success", "hashes": hashes})
 }

@@ -2,6 +2,7 @@ package scripts
 
 import (
 	"channel-helper-go/ent"
+	"channel-helper-go/modules"
 	telegrambot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/modules/uploader"
 	webapi "channel-helper-go/modules/web-api"
@@ -47,10 +48,8 @@ func StartScript(cmd *go_console.Script) go_console.ExitCode {
 	}
 	ctx = context.WithValue(ctx, "bot", bot)
 
-	uploadTaskChannel := make(chan *ent.UploadTask)
-	ctx = context.WithValue(ctx, "uploadTaskChannel", uploadTaskChannel)
-	postChannel := make(chan *ent.Post)
-	ctx = context.WithValue(ctx, "postChannel", postChannel)
+	chans := channels.NewAppChannels()
+	ctx = context.WithValue(ctx, "channels", chans)
 
 	go telegrambot.StartBot(ctx)
 	wg.Add(1)

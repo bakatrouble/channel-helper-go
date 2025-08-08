@@ -11,6 +11,7 @@ require (
 	github.com/gin-contrib/graceful v1.1.4
 	github.com/gin-gonic/gin v1.10.1
 	github.com/goccy/go-yaml v1.18.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/mattn/go-sqlite3 v1.14.30
 	github.com/moroz/uuidv7-go v0.0.0-20240305042206-a7e3dca2a87e
 	github.com/mymmrac/telego v1.2.0

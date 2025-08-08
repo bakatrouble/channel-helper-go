@@ -2,6 +2,7 @@ package web_api
 
 import (
 	ent "channel-helper-go/ent"
+	channels "channel-helper-go/modules"
 	"channel-helper-go/modules/web-api/handlers"
 	"channel-helper-go/utils"
 	"context"
@@ -15,7 +16,7 @@ func StartWebAPI(ctx context.Context) {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
-	uploadTaskChannel := ctx.Value("uploadTaskChannel").(chan *ent.UploadTask)
+	chans := ctx.Value("chans").(*channels.AppChannels)
 
 	defer wg.Done()
 
@@ -36,13 +37,14 @@ func StartWebAPI(ctx context.Context) {
 		}
 		c.Set("config", config)
 		c.Set("db", db)
-		c.Set("uploadTaskChannel", uploadTaskChannel)
+		c.Set("chans", chans)
 		c.Next()
 	})
 
 	g.POST("/photo", handlers.PhotoHandler)
 	g.POST("/gif", handlers.GifHandler)
 	g.GET("/hashes", handlers.HashesHandler)
+	g.GET("/ws", handlers.WebsocketHandler)
 
 	_ = router.RunWithContext(ctx)
 }

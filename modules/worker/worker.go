@@ -3,6 +3,7 @@ package worker
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
+	channels "channel-helper-go/modules"
 	"channel-helper-go/utils"
 	"context"
 	"entgo.io/ent/dialect/sql"
@@ -15,6 +16,7 @@ import (
 func sendPost(ctx context.Context, postObj *ent.Post) error {
 	bot := ctx.Value("bot").(*telego.Bot)
 	config := ctx.Value("config").(*utils.Config)
+	chans := ctx.Value("chans").(*channels.AppChannels)
 	var err error
 
 	println("Sending post:", post.ID)
@@ -56,6 +58,8 @@ func sendPost(ctx context.Context, postObj *ent.Post) error {
 		println("Error updating post as sent:", err.Error())
 		return err
 	}
+
+	chans.PostSent <- postObj
 
 	return nil
 }

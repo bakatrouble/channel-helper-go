@@ -2,6 +2,7 @@ package telegram_bot
 
 import (
 	"channel-helper-go/ent"
+	channels "channel-helper-go/modules"
 	"channel-helper-go/modules/telegram-bot/handlers"
 	"channel-helper-go/utils"
 	"context"
@@ -18,6 +19,7 @@ func StartBot(ctx context.Context) {
 	db := ctx.Value("db").(*ent.Client)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	bot := ctx.Value("bot").(*telego.Bot)
+	chans := ctx.Value("chans").(*channels.AppChannels)
 
 	defer wg.Done()
 
@@ -31,6 +33,7 @@ func StartBot(ctx context.Context) {
 		ctx = ctx.WithValue("config", config)
 		ctx = ctx.WithValue("db", db)
 		ctx = ctx.WithValue("wg", wg)
+		ctx = ctx.WithValue("chans", chans)
 		return ctx.Next(update)
 	})
 	bh.Use(func(ctx *th.Context, update telego.Update) error {

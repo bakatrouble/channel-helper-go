@@ -4,6 +4,7 @@ import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/postmessageid"
+	channels "channel-helper-go/modules"
 	"errors"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -69,6 +70,7 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 
 func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 	db := ctx.Value("db").(*ent.Client)
+	chans, _ := ctx.Value("chans").(*channels.AppChannels)
 
 	postObj, err := db.Post.Query().
 		Where(post.HasMessageIdsWith(
@@ -89,6 +91,8 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 		println("Failed to delete post:", err.Error())
 		return nil, err
 	}
+
+	chans.PostDeleted <- postObj
 
 	return nil, nil
 }

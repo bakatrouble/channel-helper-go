@@ -48,8 +48,8 @@ func StartScript(cmd *go_console.Script) go_console.ExitCode {
 	}
 	ctx = context.WithValue(ctx, "bot", bot)
 
-	chans := channels.NewAppChannels()
-	ctx = context.WithValue(ctx, "channels", chans)
+	hub := channels.NewHub()
+	ctx = context.WithValue(ctx, "hub", &hub)
 
 	go telegrambot.StartBot(ctx)
 	wg.Add(1)

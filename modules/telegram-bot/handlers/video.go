@@ -11,7 +11,7 @@ import (
 func VideoHandler(ctx *th.Context, message telego.Message) error {
 	println("VideoHandler called")
 	db, _ := ctx.Value("db").(*ent.Client)
-	chans, _ := ctx.Value("chans").(*channels.AppChannels)
+	hub, _ := ctx.Value("hub").(*channels.Hub)
 
 	createdPost, err := db.Post.Create().
 		SetType(post.TypeVideo).
@@ -25,7 +25,7 @@ func VideoHandler(ctx *th.Context, message telego.Message) error {
 
 	reactToMessage(ctx, &message)
 
-	chans.PostCreated <- createdPost
+	hub.PostCreated <- createdPost
 
 	return nil
 }

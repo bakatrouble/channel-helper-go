@@ -12,7 +12,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func WebsocketHandler(c *gin.Context) {
-	chans := c.MustGet("chans").(*channels.AppChannels)
+	hub := c.MustGet("hub").(*channels.Hub)
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -26,15 +26,15 @@ func WebsocketHandler(c *gin.Context) {
 
 	for {
 		select {
-		case post := <-chans.PostCreated:
+		case post := <-hub.PostCreated:
 			_ = conn.WriteJSON(gin.H{"type": "postCreated", "post": post})
-		case post := <-chans.PostSent:
+		case post := <-hub.PostSent:
 			_ = conn.WriteJSON(gin.H{"type": "postSent", "post": post})
-		case post := <-chans.PostDeleted:
+		case post := <-hub.PostDeleted:
 			_ = conn.WriteJSON(gin.H{"type": "postDeleted", "post": post})
-		case uploadTask := <-chans.UploadTaskCreated:
+		case uploadTask := <-hub.UploadTaskCreated:
 			_ = conn.WriteJSON(gin.H{"type": "uploadTaskCreated", "uploadTask": uploadTask})
-		case uploadTask := <-chans.UploadTaskDone:
+		case uploadTask := <-hub.UploadTaskDone:
 			_ = conn.WriteJSON(gin.H{"type": "uploadTaskDone", "uploadTask": uploadTask})
 		}
 	}

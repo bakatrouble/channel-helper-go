@@ -17,7 +17,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
 	bot := ctx.Value("bot").(*telego.Bot)
-	chans := c.MustGet("chans").(*channels.AppChannels)
+	hub := ctx.Value("hub").(*channels.Hub)
 
 	tx, err := db.Tx(ctx)
 	if err != nil {
@@ -105,8 +105,8 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 		return err
 	}
 
-	chans.UploadTaskDone <- task
-	chans.PostCreated <- createdPost
+	hub.UploadTaskDone <- task
+	hub.PostCreated <- createdPost
 
 	return nil
 }
@@ -114,7 +114,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 func StartUploader(ctx context.Context) {
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	db := ctx.Value("db").(*ent.Client)
-	uploadTaskChannel := ctx.Value("uploadTaskChannel").(chan *ent.UploadTask)
+	hub := ctx.Value("hub").(*channels.Hub)
 
 	defer wg.Done()
 
@@ -126,19 +126,17 @@ func StartUploader(ctx context.Context) {
 		return
 	}
 	for _, task := range tasks {
-		uploadTaskChannel <- task
+		hub.UploadTaskCreated <- task
 	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case task := <-uploadTaskChannel:
+		case task := <-hub.UploadTaskCreated:
 			if task != nil {
 				_ = processTask(task, ctx)
 			}
-		default:
-			// Continue processing tasks
 		}
 	}
 }

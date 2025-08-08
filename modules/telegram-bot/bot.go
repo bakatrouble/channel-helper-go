@@ -19,7 +19,7 @@ func StartBot(ctx context.Context) {
 	db := ctx.Value("db").(*ent.Client)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	bot := ctx.Value("bot").(*telego.Bot)
-	chans := ctx.Value("chans").(*channels.AppChannels)
+	hub := ctx.Value("hub").(*channels.Hub)
 
 	defer wg.Done()
 
@@ -33,7 +33,7 @@ func StartBot(ctx context.Context) {
 		ctx = ctx.WithValue("config", config)
 		ctx = ctx.WithValue("db", db)
 		ctx = ctx.WithValue("wg", wg)
-		ctx = ctx.WithValue("chans", chans)
+		ctx = ctx.WithValue("hub", hub)
 		return ctx.Next(update)
 	})
 	bh.Use(func(ctx *th.Context, update telego.Update) error {

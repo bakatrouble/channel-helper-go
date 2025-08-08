@@ -16,7 +16,7 @@ func StartWebAPI(ctx context.Context) {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
-	chans := ctx.Value("chans").(*channels.AppChannels)
+	hub := ctx.Value("hub").(*channels.Hub)
 
 	defer wg.Done()
 
@@ -37,7 +37,7 @@ func StartWebAPI(ctx context.Context) {
 		}
 		c.Set("config", config)
 		c.Set("db", db)
-		c.Set("chans", chans)
+		c.Set("hub", hub)
 		c.Next()
 	})
 

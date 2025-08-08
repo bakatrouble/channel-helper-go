@@ -70,7 +70,7 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 
 func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 	db := ctx.Value("db").(*ent.Client)
-	chans, _ := ctx.Value("chans").(*channels.AppChannels)
+	hub, _ := ctx.Value("hub").(*channels.Hub)
 
 	postObj, err := db.Post.Query().
 		Where(post.HasMessageIdsWith(
@@ -92,7 +92,7 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 		return nil, err
 	}
 
-	chans.PostDeleted <- postObj
+	hub.PostDeleted <- postObj
 
 	return nil, nil
 }

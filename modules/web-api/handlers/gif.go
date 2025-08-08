@@ -21,7 +21,7 @@ type GifHandlerUrlPayload struct {
 
 func GifHandler(c *gin.Context) {
 	db := c.MustGet("db").(*ent.Client)
-	chans := c.MustGet("chans").(*channels.AppChannels)
+	hub := c.MustGet("hub").(*channels.Hub)
 
 	var gifBytes []byte
 	if fileHeader, err := c.FormFile("upload"); err == nil {
@@ -80,7 +80,7 @@ func GifHandler(c *gin.Context) {
 		return
 	}
 
-	chans.UploadTaskCreated <- uploadTask
+	hub.UploadTaskCreated <- uploadTask
 
 	c.JSON(200, gin.H{"status": "ok", "upload_id": uploadTask.ID})
 }

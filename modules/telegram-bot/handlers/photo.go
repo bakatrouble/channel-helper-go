@@ -16,7 +16,7 @@ import (
 func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	println("PhotoHandler called")
 	db, _ := ctx.Value("db").(*ent.Client)
-	chans, _ := ctx.Value("chans").(*channels.AppChannels)
+	hub, _ := ctx.Value("hub").(*channels.Hub)
 	bot := ctx.Bot()
 
 	file, err := bot.GetFile(ctx, &telego.GetFileParams{FileID: message.Photo[len(message.Photo)-1].FileID})
@@ -86,7 +86,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 
 	reactToMessage(ctx, &message)
 
-	chans.PostCreated <- createdPost
+	hub.PostCreated <- createdPost
 
 	return nil
 }

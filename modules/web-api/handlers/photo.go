@@ -29,7 +29,7 @@ type PhotoHandlerUrlPayload struct {
 
 func PhotoHandler(c *gin.Context) {
 	db := c.Value("db").(*ent.Client)
-	chans := c.MustGet("chans").(*channels.AppChannels)
+	hub := c.MustGet("hub").(*channels.Hub)
 
 	var imageBytes []byte
 	if fileHeader, err := c.FormFile("upload"); err == nil {
@@ -119,7 +119,7 @@ func PhotoHandler(c *gin.Context) {
 		return
 	}
 
-	chans.UploadTaskCreated <- uploadTask
+	hub.UploadTaskCreated <- uploadTask
 
 	c.JSON(200, gin.H{"status": "ok", "hash": hash, "upload_id": uploadTask.ID})
 }

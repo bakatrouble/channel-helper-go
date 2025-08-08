@@ -16,7 +16,7 @@ import (
 func sendPost(ctx context.Context, postObj *ent.Post) error {
 	bot := ctx.Value("bot").(*telego.Bot)
 	config := ctx.Value("config").(*utils.Config)
-	chans := ctx.Value("chans").(*channels.AppChannels)
+	hub := ctx.Value("hub").(*channels.Hub)
 	var err error
 
 	println("Sending post:", post.ID)
@@ -59,7 +59,7 @@ func sendPost(ctx context.Context, postObj *ent.Post) error {
 		return err
 	}
 
-	chans.PostSent <- postObj
+	hub.PostSent <- postObj
 
 	return nil
 }

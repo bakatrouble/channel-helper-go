@@ -3,9 +3,11 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/predicate"
 	"channel-helper-go/ent/uploadtask"
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -19,10 +21,11 @@ import (
 // UploadTaskQuery is the builder for querying UploadTask entities.
 type UploadTaskQuery struct {
 	config
-	ctx        *QueryContext
-	order      []uploadtask.OrderOption
-	inters     []Interceptor
-	predicates []predicate.UploadTask
+	ctx           *QueryContext
+	order         []uploadtask.OrderOption
+	inters        []Interceptor
+	predicates    []predicate.UploadTask
+	withImageHash *ImageHashQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -57,6 +60,28 @@ func (_q *UploadTaskQuery) Unique(unique bool) *UploadTaskQuery {
 func (_q *UploadTaskQuery) Order(o ...uploadtask.OrderOption) *UploadTaskQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryImageHash chains the current query on the "image_hash" edge.
+func (_q *UploadTaskQuery) QueryImageHash() *ImageHashQuery {
+	query := (&ImageHashClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(uploadtask.Table, uploadtask.FieldID, selector),
+			sqlgraph.To(imagehash.Table, imagehash.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, uploadtask.ImageHashTable, uploadtask.ImageHashColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first UploadTask entity from the query.
@@ -246,15 +271,27 @@ func (_q *UploadTaskQuery) Clone() *UploadTaskQuery {
 		return nil
 	}
 	return &UploadTaskQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]uploadtask.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.UploadTask{}, _q.predicates...),
+		config:        _q.config,
+		ctx:           _q.ctx.Clone(),
+		order:         append([]uploadtask.OrderOption{}, _q.order...),
+		inters:        append([]Interceptor{}, _q.inters...),
+		predicates:    append([]predicate.UploadTask{}, _q.predicates...),
+		withImageHash: _q.withImageHash.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
+}
+
+// WithImageHash tells the query-builder to eager-load the nodes that are connected to
+// the "image_hash" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UploadTaskQuery) WithImageHash(opts ...func(*ImageHashQuery)) *UploadTaskQuery {
+	query := (&ImageHashClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withImageHash = query
+	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -333,8 +370,11 @@ func (_q *UploadTaskQuery) prepareQuery(ctx context.Context) error {
 
 func (_q *UploadTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*UploadTask, error) {
 	var (
-		nodes = []*UploadTask{}
-		_spec = _q.querySpec()
+		nodes       = []*UploadTask{}
+		_spec       = _q.querySpec()
+		loadedTypes = [1]bool{
+			_q.withImageHash != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*UploadTask).scanValues(nil, columns)
@@ -342,6 +382,7 @@ func (_q *UploadTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*U
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &UploadTask{config: _q.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -353,7 +394,42 @@ func (_q *UploadTaskQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*U
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withImageHash; query != nil {
+		if err := _q.loadImageHash(ctx, query, nodes, nil,
+			func(n *UploadTask, e *ImageHash) { n.Edges.ImageHash = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (_q *UploadTaskQuery) loadImageHash(ctx context.Context, query *ImageHashQuery, nodes []*UploadTask, init func(*UploadTask), assign func(*UploadTask, *ImageHash)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuidv7.UUID]*UploadTask)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.ImageHash(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(uploadtask.ImageHashColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.upload_task_image_hash
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "upload_task_image_hash" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "upload_task_image_hash" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (_q *UploadTaskQuery) sqlCount(ctx context.Context) (int, error) {

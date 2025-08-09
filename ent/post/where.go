@@ -76,11 +76,6 @@ func SentAt(v time.Time) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldSentAt, v))
 }
 
-// ImageHash applies equality check predicate on the "image_hash" field. It's identical to ImageHashEQ.
-func ImageHash(v string) predicate.Post {
-	return predicate.Post(sql.FieldEQ(FieldImageHash, v))
-}
-
 // TypeEQ applies the EQ predicate on the "type" field.
 func TypeEQ(v Type) predicate.Post {
 	return predicate.Post(sql.FieldEQ(FieldType, v))
@@ -266,81 +261,6 @@ func SentAtNotNil() predicate.Post {
 	return predicate.Post(sql.FieldNotNull(FieldSentAt))
 }
 
-// ImageHashEQ applies the EQ predicate on the "image_hash" field.
-func ImageHashEQ(v string) predicate.Post {
-	return predicate.Post(sql.FieldEQ(FieldImageHash, v))
-}
-
-// ImageHashNEQ applies the NEQ predicate on the "image_hash" field.
-func ImageHashNEQ(v string) predicate.Post {
-	return predicate.Post(sql.FieldNEQ(FieldImageHash, v))
-}
-
-// ImageHashIn applies the In predicate on the "image_hash" field.
-func ImageHashIn(vs ...string) predicate.Post {
-	return predicate.Post(sql.FieldIn(FieldImageHash, vs...))
-}
-
-// ImageHashNotIn applies the NotIn predicate on the "image_hash" field.
-func ImageHashNotIn(vs ...string) predicate.Post {
-	return predicate.Post(sql.FieldNotIn(FieldImageHash, vs...))
-}
-
-// ImageHashGT applies the GT predicate on the "image_hash" field.
-func ImageHashGT(v string) predicate.Post {
-	return predicate.Post(sql.FieldGT(FieldImageHash, v))
-}
-
-// ImageHashGTE applies the GTE predicate on the "image_hash" field.
-func ImageHashGTE(v string) predicate.Post {
-	return predicate.Post(sql.FieldGTE(FieldImageHash, v))
-}
-
-// ImageHashLT applies the LT predicate on the "image_hash" field.
-func ImageHashLT(v string) predicate.Post {
-	return predicate.Post(sql.FieldLT(FieldImageHash, v))
-}
-
-// ImageHashLTE applies the LTE predicate on the "image_hash" field.
-func ImageHashLTE(v string) predicate.Post {
-	return predicate.Post(sql.FieldLTE(FieldImageHash, v))
-}
-
-// ImageHashContains applies the Contains predicate on the "image_hash" field.
-func ImageHashContains(v string) predicate.Post {
-	return predicate.Post(sql.FieldContains(FieldImageHash, v))
-}
-
-// ImageHashHasPrefix applies the HasPrefix predicate on the "image_hash" field.
-func ImageHashHasPrefix(v string) predicate.Post {
-	return predicate.Post(sql.FieldHasPrefix(FieldImageHash, v))
-}
-
-// ImageHashHasSuffix applies the HasSuffix predicate on the "image_hash" field.
-func ImageHashHasSuffix(v string) predicate.Post {
-	return predicate.Post(sql.FieldHasSuffix(FieldImageHash, v))
-}
-
-// ImageHashIsNil applies the IsNil predicate on the "image_hash" field.
-func ImageHashIsNil() predicate.Post {
-	return predicate.Post(sql.FieldIsNull(FieldImageHash))
-}
-
-// ImageHashNotNil applies the NotNil predicate on the "image_hash" field.
-func ImageHashNotNil() predicate.Post {
-	return predicate.Post(sql.FieldNotNull(FieldImageHash))
-}
-
-// ImageHashEqualFold applies the EqualFold predicate on the "image_hash" field.
-func ImageHashEqualFold(v string) predicate.Post {
-	return predicate.Post(sql.FieldEqualFold(FieldImageHash, v))
-}
-
-// ImageHashContainsFold applies the ContainsFold predicate on the "image_hash" field.
-func ImageHashContainsFold(v string) predicate.Post {
-	return predicate.Post(sql.FieldContainsFold(FieldImageHash, v))
-}
-
 // HasMessageIds applies the HasEdge predicate on the "message_ids" edge.
 func HasMessageIds() predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
@@ -356,6 +276,29 @@ func HasMessageIds() predicate.Post {
 func HasMessageIdsWith(preds ...predicate.PostMessageId) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
 		step := newMessageIdsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasImageHash applies the HasEdge predicate on the "image_hash" edge.
+func HasImageHash() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, ImageHashTable, ImageHashColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasImageHashWith applies the HasEdge predicate on the "image_hash" edge with a given conditions (other predicates).
+func HasImageHashWith(preds ...predicate.ImageHash) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := newImageHashStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

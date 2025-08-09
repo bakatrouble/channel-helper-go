@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
 	"fmt"
 	"strings"
@@ -28,8 +29,6 @@ type Post struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
 	SentAt time.Time `json:"sent_at,omitempty"`
-	// ImageHash holds the value of the "image_hash" field.
-	ImageHash string `json:"image_hash,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PostQuery when eager-loading is set.
 	Edges        PostEdges `json:"edges"`
@@ -40,9 +39,11 @@ type Post struct {
 type PostEdges struct {
 	// MessageIds holds the value of the message_ids edge.
 	MessageIds []*PostMessageId `json:"message_ids,omitempty"`
+	// ImageHash holds the value of the image_hash edge.
+	ImageHash *ImageHash `json:"image_hash,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // MessageIdsOrErr returns the MessageIds value or an error if the edge
@@ -54,6 +55,17 @@ func (e PostEdges) MessageIdsOrErr() ([]*PostMessageId, error) {
 	return nil, &NotLoadedError{edge: "message_ids"}
 }
 
+// ImageHashOrErr returns the ImageHash value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PostEdges) ImageHashOrErr() (*ImageHash, error) {
+	if e.ImageHash != nil {
+		return e.ImageHash, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: imagehash.Label}
+	}
+	return nil, &NotLoadedError{edge: "image_hash"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Post) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -61,7 +73,7 @@ func (*Post) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case post.FieldIsSent:
 			values[i] = new(sql.NullBool)
-		case post.FieldType, post.FieldFileID, post.FieldImageHash:
+		case post.FieldType, post.FieldFileID:
 			values[i] = new(sql.NullString)
 		case post.FieldCreatedAt, post.FieldSentAt:
 			values[i] = new(sql.NullTime)
@@ -118,12 +130,6 @@ func (_m *Post) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SentAt = value.Time
 			}
-		case post.FieldImageHash:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field image_hash", values[i])
-			} else if value.Valid {
-				_m.ImageHash = value.String
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -140,6 +146,11 @@ func (_m *Post) Value(name string) (ent.Value, error) {
 // QueryMessageIds queries the "message_ids" edge of the Post entity.
 func (_m *Post) QueryMessageIds() *PostMessageIdQuery {
 	return NewPostClient(_m.config).QueryMessageIds(_m)
+}
+
+// QueryImageHash queries the "image_hash" edge of the Post entity.
+func (_m *Post) QueryImageHash() *ImageHashQuery {
+	return NewPostClient(_m.config).QueryImageHash(_m)
 }
 
 // Update returns a builder for updating this Post.
@@ -179,9 +190,6 @@ func (_m *Post) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sent_at=")
 	builder.WriteString(_m.SentAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("image_hash=")
-	builder.WriteString(_m.ImageHash)
 	builder.WriteByte(')')
 	return builder.String()
 }

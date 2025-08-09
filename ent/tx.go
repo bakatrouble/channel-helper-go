@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// ImageHash is the client for interacting with the ImageHash builders.
+	ImageHash *ImageHashClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 	// PostMessageId is the client for interacting with the PostMessageId builders.
@@ -149,6 +151,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.ImageHash = NewImageHashClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
 	tx.PostMessageId = NewPostMessageIdClient(tx.config)
 	tx.UploadTask = NewUploadTaskClient(tx.config)
@@ -161,7 +164,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Post.QueryXXX(), the query will be executed
+// applies a query, for example: ImageHash.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

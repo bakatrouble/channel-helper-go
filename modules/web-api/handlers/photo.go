@@ -11,6 +11,7 @@ import (
 	_ "golang.org/x/image/webp"
 	"image"
 	_ "image/gif"
+	"image/jpeg"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
@@ -91,6 +92,12 @@ func PhotoHandler(c *gin.Context) {
 	if imConfig.Width > 2000 || imConfig.Height > 2000 {
 		im = resize.Resize(2000, 2000, im, resize.Lanczos3)
 	}
+	imageBytes = make([]byte, 0)
+	err = jpeg.Encode(bytes.NewBuffer(imageBytes), im, &jpeg.Options{Quality: 85})
+	if err != nil {
+		c.JSON(500, gin.H{"status": "error", "message": "Failed to encode image"})
+		return
+	}
 
 	hash, err := utils.HashImage(imageBytes)
 	if err != nil {
@@ -108,13 +115,29 @@ func PhotoHandler(c *gin.Context) {
 		return
 	}
 
-	uploadTask, err := db.UploadTask.Create().
-		SetType(uploadtask.TypeAnimation).
+	tx, err := db.Tx(c)
+	if err != nil {
+		c.JSON(500, gin.H{"status": "error", "message": "Failed to start transaction"})
+		return
+	}
+	uploadTask, err := tx.UploadTask.Create().
+		SetType(uploadtask.TypePhoto).
 		SetData(imageBytes).
-		SetImageHash(hash).
 		Save(c)
 	if err != nil {
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to create upload task"})
+		return
+	}
+	err = tx.ImageHash.Create().
+		SetImageHash(hash).
+		SetUploadTask(uploadTask).
+		Exec(c)
+	if err != nil {
+		c.JSON(500, gin.H{"status": "error", "message": "Failed to create image hash"})
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		c.JSON(500, gin.H{"status": "error", "message": "Failed to commit transaction"})
 		return
 	}
 

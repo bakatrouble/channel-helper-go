@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/postmessageid"
 	"channel-helper-go/ent/predicate"
@@ -27,10 +28,463 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeImageHash     = "ImageHash"
 	TypePost          = "Post"
 	TypePostMessageId = "PostMessageId"
 	TypeUploadTask    = "UploadTask"
 )
+
+// ImageHashMutation represents an operation that mutates the ImageHash nodes in the graph.
+type ImageHashMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *int
+	image_hash         *string
+	clearedFields      map[string]struct{}
+	post               *uuidv7.UUID
+	clearedpost        bool
+	upload_task        *uuidv7.UUID
+	clearedupload_task bool
+	done               bool
+	oldValue           func(context.Context) (*ImageHash, error)
+	predicates         []predicate.ImageHash
+}
+
+var _ ent.Mutation = (*ImageHashMutation)(nil)
+
+// imagehashOption allows management of the mutation configuration using functional options.
+type imagehashOption func(*ImageHashMutation)
+
+// newImageHashMutation creates new mutation for the ImageHash entity.
+func newImageHashMutation(c config, op Op, opts ...imagehashOption) *ImageHashMutation {
+	m := &ImageHashMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeImageHash,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withImageHashID sets the ID field of the mutation.
+func withImageHashID(id int) imagehashOption {
+	return func(m *ImageHashMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ImageHash
+		)
+		m.oldValue = func(ctx context.Context) (*ImageHash, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ImageHash.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withImageHash sets the old ImageHash of the mutation.
+func withImageHash(node *ImageHash) imagehashOption {
+	return func(m *ImageHashMutation) {
+		m.oldValue = func(context.Context) (*ImageHash, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ImageHashMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ImageHashMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ImageHashMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ImageHashMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ImageHash.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetImageHash sets the "image_hash" field.
+func (m *ImageHashMutation) SetImageHash(s string) {
+	m.image_hash = &s
+}
+
+// ImageHash returns the value of the "image_hash" field in the mutation.
+func (m *ImageHashMutation) ImageHash() (r string, exists bool) {
+	v := m.image_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldImageHash returns the old "image_hash" field's value of the ImageHash entity.
+// If the ImageHash object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ImageHashMutation) OldImageHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldImageHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldImageHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldImageHash: %w", err)
+	}
+	return oldValue.ImageHash, nil
+}
+
+// ResetImageHash resets all changes to the "image_hash" field.
+func (m *ImageHashMutation) ResetImageHash() {
+	m.image_hash = nil
+}
+
+// SetPostID sets the "post" edge to the Post entity by id.
+func (m *ImageHashMutation) SetPostID(id uuidv7.UUID) {
+	m.post = &id
+}
+
+// ClearPost clears the "post" edge to the Post entity.
+func (m *ImageHashMutation) ClearPost() {
+	m.clearedpost = true
+}
+
+// PostCleared reports if the "post" edge to the Post entity was cleared.
+func (m *ImageHashMutation) PostCleared() bool {
+	return m.clearedpost
+}
+
+// PostID returns the "post" edge ID in the mutation.
+func (m *ImageHashMutation) PostID() (id uuidv7.UUID, exists bool) {
+	if m.post != nil {
+		return *m.post, true
+	}
+	return
+}
+
+// PostIDs returns the "post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PostID instead. It exists only for internal usage by the builders.
+func (m *ImageHashMutation) PostIDs() (ids []uuidv7.UUID) {
+	if id := m.post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPost resets all changes to the "post" edge.
+func (m *ImageHashMutation) ResetPost() {
+	m.post = nil
+	m.clearedpost = false
+}
+
+// SetUploadTaskID sets the "upload_task" edge to the UploadTask entity by id.
+func (m *ImageHashMutation) SetUploadTaskID(id uuidv7.UUID) {
+	m.upload_task = &id
+}
+
+// ClearUploadTask clears the "upload_task" edge to the UploadTask entity.
+func (m *ImageHashMutation) ClearUploadTask() {
+	m.clearedupload_task = true
+}
+
+// UploadTaskCleared reports if the "upload_task" edge to the UploadTask entity was cleared.
+func (m *ImageHashMutation) UploadTaskCleared() bool {
+	return m.clearedupload_task
+}
+
+// UploadTaskID returns the "upload_task" edge ID in the mutation.
+func (m *ImageHashMutation) UploadTaskID() (id uuidv7.UUID, exists bool) {
+	if m.upload_task != nil {
+		return *m.upload_task, true
+	}
+	return
+}
+
+// UploadTaskIDs returns the "upload_task" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UploadTaskID instead. It exists only for internal usage by the builders.
+func (m *ImageHashMutation) UploadTaskIDs() (ids []uuidv7.UUID) {
+	if id := m.upload_task; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUploadTask resets all changes to the "upload_task" edge.
+func (m *ImageHashMutation) ResetUploadTask() {
+	m.upload_task = nil
+	m.clearedupload_task = false
+}
+
+// Where appends a list predicates to the ImageHashMutation builder.
+func (m *ImageHashMutation) Where(ps ...predicate.ImageHash) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ImageHashMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ImageHashMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ImageHash, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ImageHashMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ImageHashMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ImageHash).
+func (m *ImageHashMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ImageHashMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.image_hash != nil {
+		fields = append(fields, imagehash.FieldImageHash)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ImageHashMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case imagehash.FieldImageHash:
+		return m.ImageHash()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ImageHashMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case imagehash.FieldImageHash:
+		return m.OldImageHash(ctx)
+	}
+	return nil, fmt.Errorf("unknown ImageHash field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImageHashMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case imagehash.FieldImageHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetImageHash(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ImageHash field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ImageHashMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ImageHashMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ImageHashMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown ImageHash numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ImageHashMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ImageHashMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ImageHashMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ImageHash nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ImageHashMutation) ResetField(name string) error {
+	switch name {
+	case imagehash.FieldImageHash:
+		m.ResetImageHash()
+		return nil
+	}
+	return fmt.Errorf("unknown ImageHash field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ImageHashMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.post != nil {
+		edges = append(edges, imagehash.EdgePost)
+	}
+	if m.upload_task != nil {
+		edges = append(edges, imagehash.EdgeUploadTask)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ImageHashMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case imagehash.EdgePost:
+		if id := m.post; id != nil {
+			return []ent.Value{*id}
+		}
+	case imagehash.EdgeUploadTask:
+		if id := m.upload_task; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ImageHashMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ImageHashMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ImageHashMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedpost {
+		edges = append(edges, imagehash.EdgePost)
+	}
+	if m.clearedupload_task {
+		edges = append(edges, imagehash.EdgeUploadTask)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ImageHashMutation) EdgeCleared(name string) bool {
+	switch name {
+	case imagehash.EdgePost:
+		return m.clearedpost
+	case imagehash.EdgeUploadTask:
+		return m.clearedupload_task
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ImageHashMutation) ClearEdge(name string) error {
+	switch name {
+	case imagehash.EdgePost:
+		m.ClearPost()
+		return nil
+	case imagehash.EdgeUploadTask:
+		m.ClearUploadTask()
+		return nil
+	}
+	return fmt.Errorf("unknown ImageHash unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ImageHashMutation) ResetEdge(name string) error {
+	switch name {
+	case imagehash.EdgePost:
+		m.ResetPost()
+		return nil
+	case imagehash.EdgeUploadTask:
+		m.ResetUploadTask()
+		return nil
+	}
+	return fmt.Errorf("unknown ImageHash edge %s", name)
+}
 
 // PostMutation represents an operation that mutates the Post nodes in the graph.
 type PostMutation struct {
@@ -43,11 +497,12 @@ type PostMutation struct {
 	is_sent            *bool
 	created_at         *time.Time
 	sent_at            *time.Time
-	image_hash         *string
 	clearedFields      map[string]struct{}
 	message_ids        map[int]struct{}
 	removedmessage_ids map[int]struct{}
 	clearedmessage_ids bool
+	image_hash         *int
+	clearedimage_hash  bool
 	done               bool
 	oldValue           func(context.Context) (*Post, error)
 	predicates         []predicate.Post
@@ -350,55 +805,6 @@ func (m *PostMutation) ResetSentAt() {
 	delete(m.clearedFields, post.FieldSentAt)
 }
 
-// SetImageHash sets the "image_hash" field.
-func (m *PostMutation) SetImageHash(s string) {
-	m.image_hash = &s
-}
-
-// ImageHash returns the value of the "image_hash" field in the mutation.
-func (m *PostMutation) ImageHash() (r string, exists bool) {
-	v := m.image_hash
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldImageHash returns the old "image_hash" field's value of the Post entity.
-// If the Post object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostMutation) OldImageHash(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldImageHash is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldImageHash requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldImageHash: %w", err)
-	}
-	return oldValue.ImageHash, nil
-}
-
-// ClearImageHash clears the value of the "image_hash" field.
-func (m *PostMutation) ClearImageHash() {
-	m.image_hash = nil
-	m.clearedFields[post.FieldImageHash] = struct{}{}
-}
-
-// ImageHashCleared returns if the "image_hash" field was cleared in this mutation.
-func (m *PostMutation) ImageHashCleared() bool {
-	_, ok := m.clearedFields[post.FieldImageHash]
-	return ok
-}
-
-// ResetImageHash resets all changes to the "image_hash" field.
-func (m *PostMutation) ResetImageHash() {
-	m.image_hash = nil
-	delete(m.clearedFields, post.FieldImageHash)
-}
-
 // AddMessageIDIDs adds the "message_ids" edge to the PostMessageId entity by ids.
 func (m *PostMutation) AddMessageIDIDs(ids ...int) {
 	if m.message_ids == nil {
@@ -453,6 +859,45 @@ func (m *PostMutation) ResetMessageIds() {
 	m.removedmessage_ids = nil
 }
 
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by id.
+func (m *PostMutation) SetImageHashID(id int) {
+	m.image_hash = &id
+}
+
+// ClearImageHash clears the "image_hash" edge to the ImageHash entity.
+func (m *PostMutation) ClearImageHash() {
+	m.clearedimage_hash = true
+}
+
+// ImageHashCleared reports if the "image_hash" edge to the ImageHash entity was cleared.
+func (m *PostMutation) ImageHashCleared() bool {
+	return m.clearedimage_hash
+}
+
+// ImageHashID returns the "image_hash" edge ID in the mutation.
+func (m *PostMutation) ImageHashID() (id int, exists bool) {
+	if m.image_hash != nil {
+		return *m.image_hash, true
+	}
+	return
+}
+
+// ImageHashIDs returns the "image_hash" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ImageHashID instead. It exists only for internal usage by the builders.
+func (m *PostMutation) ImageHashIDs() (ids []int) {
+	if id := m.image_hash; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetImageHash resets all changes to the "image_hash" edge.
+func (m *PostMutation) ResetImageHash() {
+	m.image_hash = nil
+	m.clearedimage_hash = false
+}
+
 // Where appends a list predicates to the PostMutation builder.
 func (m *PostMutation) Where(ps ...predicate.Post) {
 	m.predicates = append(m.predicates, ps...)
@@ -487,7 +932,7 @@ func (m *PostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m._type != nil {
 		fields = append(fields, post.FieldType)
 	}
@@ -502,9 +947,6 @@ func (m *PostMutation) Fields() []string {
 	}
 	if m.sent_at != nil {
 		fields = append(fields, post.FieldSentAt)
-	}
-	if m.image_hash != nil {
-		fields = append(fields, post.FieldImageHash)
 	}
 	return fields
 }
@@ -524,8 +966,6 @@ func (m *PostMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case post.FieldSentAt:
 		return m.SentAt()
-	case post.FieldImageHash:
-		return m.ImageHash()
 	}
 	return nil, false
 }
@@ -545,8 +985,6 @@ func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case post.FieldSentAt:
 		return m.OldSentAt(ctx)
-	case post.FieldImageHash:
-		return m.OldImageHash(ctx)
 	}
 	return nil, fmt.Errorf("unknown Post field %s", name)
 }
@@ -591,13 +1029,6 @@ func (m *PostMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSentAt(v)
 		return nil
-	case post.FieldImageHash:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetImageHash(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Post field %s", name)
 }
@@ -631,9 +1062,6 @@ func (m *PostMutation) ClearedFields() []string {
 	if m.FieldCleared(post.FieldSentAt) {
 		fields = append(fields, post.FieldSentAt)
 	}
-	if m.FieldCleared(post.FieldImageHash) {
-		fields = append(fields, post.FieldImageHash)
-	}
 	return fields
 }
 
@@ -650,9 +1078,6 @@ func (m *PostMutation) ClearField(name string) error {
 	switch name {
 	case post.FieldSentAt:
 		m.ClearSentAt()
-		return nil
-	case post.FieldImageHash:
-		m.ClearImageHash()
 		return nil
 	}
 	return fmt.Errorf("unknown Post nullable field %s", name)
@@ -677,18 +1102,18 @@ func (m *PostMutation) ResetField(name string) error {
 	case post.FieldSentAt:
 		m.ResetSentAt()
 		return nil
-	case post.FieldImageHash:
-		m.ResetImageHash()
-		return nil
 	}
 	return fmt.Errorf("unknown Post field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.message_ids != nil {
 		edges = append(edges, post.EdgeMessageIds)
+	}
+	if m.image_hash != nil {
+		edges = append(edges, post.EdgeImageHash)
 	}
 	return edges
 }
@@ -703,13 +1128,17 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case post.EdgeImageHash:
+		if id := m.image_hash; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedmessage_ids != nil {
 		edges = append(edges, post.EdgeMessageIds)
 	}
@@ -732,9 +1161,12 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedmessage_ids {
 		edges = append(edges, post.EdgeMessageIds)
+	}
+	if m.clearedimage_hash {
+		edges = append(edges, post.EdgeImageHash)
 	}
 	return edges
 }
@@ -745,6 +1177,8 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 	switch name {
 	case post.EdgeMessageIds:
 		return m.clearedmessage_ids
+	case post.EdgeImageHash:
+		return m.clearedimage_hash
 	}
 	return false
 }
@@ -753,6 +1187,9 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *PostMutation) ClearEdge(name string) error {
 	switch name {
+	case post.EdgeImageHash:
+		m.ClearImageHash()
+		return nil
 	}
 	return fmt.Errorf("unknown Post unique edge %s", name)
 }
@@ -763,6 +1200,9 @@ func (m *PostMutation) ResetEdge(name string) error {
 	switch name {
 	case post.EdgeMessageIds:
 		m.ResetMessageIds()
+		return nil
+	case post.EdgeImageHash:
+		m.ResetImageHash()
 		return nil
 	}
 	return fmt.Errorf("unknown Post edge %s", name)
@@ -1287,19 +1727,20 @@ func (m *PostMessageIdMutation) ResetEdge(name string) error {
 // UploadTaskMutation represents an operation that mutates the UploadTask nodes in the graph.
 type UploadTaskMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuidv7.UUID
-	_type         *uploadtask.Type
-	data          *[]byte
-	is_processed  *bool
-	created_at    *time.Time
-	sent_at       *time.Time
-	image_hash    *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*UploadTask, error)
-	predicates    []predicate.UploadTask
+	op                Op
+	typ               string
+	id                *uuidv7.UUID
+	_type             *uploadtask.Type
+	data              *[]byte
+	is_processed      *bool
+	created_at        *time.Time
+	sent_at           *time.Time
+	clearedFields     map[string]struct{}
+	image_hash        *int
+	clearedimage_hash bool
+	done              bool
+	oldValue          func(context.Context) (*UploadTask, error)
+	predicates        []predicate.UploadTask
 }
 
 var _ ent.Mutation = (*UploadTaskMutation)(nil)
@@ -1612,53 +2053,43 @@ func (m *UploadTaskMutation) ResetSentAt() {
 	delete(m.clearedFields, uploadtask.FieldSentAt)
 }
 
-// SetImageHash sets the "image_hash" field.
-func (m *UploadTaskMutation) SetImageHash(s string) {
-	m.image_hash = &s
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by id.
+func (m *UploadTaskMutation) SetImageHashID(id int) {
+	m.image_hash = &id
 }
 
-// ImageHash returns the value of the "image_hash" field in the mutation.
-func (m *UploadTaskMutation) ImageHash() (r string, exists bool) {
-	v := m.image_hash
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldImageHash returns the old "image_hash" field's value of the UploadTask entity.
-// If the UploadTask object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UploadTaskMutation) OldImageHash(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldImageHash is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldImageHash requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldImageHash: %w", err)
-	}
-	return oldValue.ImageHash, nil
-}
-
-// ClearImageHash clears the value of the "image_hash" field.
+// ClearImageHash clears the "image_hash" edge to the ImageHash entity.
 func (m *UploadTaskMutation) ClearImageHash() {
-	m.image_hash = nil
-	m.clearedFields[uploadtask.FieldImageHash] = struct{}{}
+	m.clearedimage_hash = true
 }
 
-// ImageHashCleared returns if the "image_hash" field was cleared in this mutation.
+// ImageHashCleared reports if the "image_hash" edge to the ImageHash entity was cleared.
 func (m *UploadTaskMutation) ImageHashCleared() bool {
-	_, ok := m.clearedFields[uploadtask.FieldImageHash]
-	return ok
+	return m.clearedimage_hash
 }
 
-// ResetImageHash resets all changes to the "image_hash" field.
+// ImageHashID returns the "image_hash" edge ID in the mutation.
+func (m *UploadTaskMutation) ImageHashID() (id int, exists bool) {
+	if m.image_hash != nil {
+		return *m.image_hash, true
+	}
+	return
+}
+
+// ImageHashIDs returns the "image_hash" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ImageHashID instead. It exists only for internal usage by the builders.
+func (m *UploadTaskMutation) ImageHashIDs() (ids []int) {
+	if id := m.image_hash; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetImageHash resets all changes to the "image_hash" edge.
 func (m *UploadTaskMutation) ResetImageHash() {
 	m.image_hash = nil
-	delete(m.clearedFields, uploadtask.FieldImageHash)
+	m.clearedimage_hash = false
 }
 
 // Where appends a list predicates to the UploadTaskMutation builder.
@@ -1695,7 +2126,7 @@ func (m *UploadTaskMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UploadTaskMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 5)
 	if m._type != nil {
 		fields = append(fields, uploadtask.FieldType)
 	}
@@ -1710,9 +2141,6 @@ func (m *UploadTaskMutation) Fields() []string {
 	}
 	if m.sent_at != nil {
 		fields = append(fields, uploadtask.FieldSentAt)
-	}
-	if m.image_hash != nil {
-		fields = append(fields, uploadtask.FieldImageHash)
 	}
 	return fields
 }
@@ -1732,8 +2160,6 @@ func (m *UploadTaskMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case uploadtask.FieldSentAt:
 		return m.SentAt()
-	case uploadtask.FieldImageHash:
-		return m.ImageHash()
 	}
 	return nil, false
 }
@@ -1753,8 +2179,6 @@ func (m *UploadTaskMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldCreatedAt(ctx)
 	case uploadtask.FieldSentAt:
 		return m.OldSentAt(ctx)
-	case uploadtask.FieldImageHash:
-		return m.OldImageHash(ctx)
 	}
 	return nil, fmt.Errorf("unknown UploadTask field %s", name)
 }
@@ -1799,13 +2223,6 @@ func (m *UploadTaskMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSentAt(v)
 		return nil
-	case uploadtask.FieldImageHash:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetImageHash(v)
-		return nil
 	}
 	return fmt.Errorf("unknown UploadTask field %s", name)
 }
@@ -1842,9 +2259,6 @@ func (m *UploadTaskMutation) ClearedFields() []string {
 	if m.FieldCleared(uploadtask.FieldSentAt) {
 		fields = append(fields, uploadtask.FieldSentAt)
 	}
-	if m.FieldCleared(uploadtask.FieldImageHash) {
-		fields = append(fields, uploadtask.FieldImageHash)
-	}
 	return fields
 }
 
@@ -1864,9 +2278,6 @@ func (m *UploadTaskMutation) ClearField(name string) error {
 		return nil
 	case uploadtask.FieldSentAt:
 		m.ClearSentAt()
-		return nil
-	case uploadtask.FieldImageHash:
-		m.ClearImageHash()
 		return nil
 	}
 	return fmt.Errorf("unknown UploadTask nullable field %s", name)
@@ -1891,28 +2302,34 @@ func (m *UploadTaskMutation) ResetField(name string) error {
 	case uploadtask.FieldSentAt:
 		m.ResetSentAt()
 		return nil
-	case uploadtask.FieldImageHash:
-		m.ResetImageHash()
-		return nil
 	}
 	return fmt.Errorf("unknown UploadTask field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UploadTaskMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.image_hash != nil {
+		edges = append(edges, uploadtask.EdgeImageHash)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *UploadTaskMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case uploadtask.EdgeImageHash:
+		if id := m.image_hash; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UploadTaskMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -1924,24 +2341,41 @@ func (m *UploadTaskMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UploadTaskMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedimage_hash {
+		edges = append(edges, uploadtask.EdgeImageHash)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *UploadTaskMutation) EdgeCleared(name string) bool {
+	switch name {
+	case uploadtask.EdgeImageHash:
+		return m.clearedimage_hash
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *UploadTaskMutation) ClearEdge(name string) error {
+	switch name {
+	case uploadtask.EdgeImageHash:
+		m.ClearImageHash()
+		return nil
+	}
 	return fmt.Errorf("unknown UploadTask unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *UploadTaskMutation) ResetEdge(name string) error {
+	switch name {
+	case uploadtask.EdgeImageHash:
+		m.ResetImageHash()
+		return nil
+	}
 	return fmt.Errorf("unknown UploadTask edge %s", name)
 }

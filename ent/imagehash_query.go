@@ -5,10 +5,9 @@ package ent
 import (
 	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
-	"channel-helper-go/ent/postmessageid"
 	"channel-helper-go/ent/predicate"
+	"channel-helper-go/ent/uploadtask"
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -19,54 +18,55 @@ import (
 	uuidv7 "github.com/moroz/uuidv7-go"
 )
 
-// PostQuery is the builder for querying Post entities.
-type PostQuery struct {
+// ImageHashQuery is the builder for querying ImageHash entities.
+type ImageHashQuery struct {
 	config
 	ctx            *QueryContext
-	order          []post.OrderOption
+	order          []imagehash.OrderOption
 	inters         []Interceptor
-	predicates     []predicate.Post
-	withMessageIds *PostMessageIdQuery
-	withImageHash  *ImageHashQuery
+	predicates     []predicate.ImageHash
+	withPost       *PostQuery
+	withUploadTask *UploadTaskQuery
+	withFKs        bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the PostQuery builder.
-func (_q *PostQuery) Where(ps ...predicate.Post) *PostQuery {
+// Where adds a new predicate for the ImageHashQuery builder.
+func (_q *ImageHashQuery) Where(ps ...predicate.ImageHash) *ImageHashQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *PostQuery) Limit(limit int) *PostQuery {
+func (_q *ImageHashQuery) Limit(limit int) *ImageHashQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *PostQuery) Offset(offset int) *PostQuery {
+func (_q *ImageHashQuery) Offset(offset int) *ImageHashQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *PostQuery) Unique(unique bool) *PostQuery {
+func (_q *ImageHashQuery) Unique(unique bool) *ImageHashQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *PostQuery) Order(o ...post.OrderOption) *PostQuery {
+func (_q *ImageHashQuery) Order(o ...imagehash.OrderOption) *ImageHashQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryMessageIds chains the current query on the "message_ids" edge.
-func (_q *PostQuery) QueryMessageIds() *PostMessageIdQuery {
-	query := (&PostMessageIdClient{config: _q.config}).Query()
+// QueryPost chains the current query on the "post" edge.
+func (_q *ImageHashQuery) QueryPost() *PostQuery {
+	query := (&PostClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,9 +76,9 @@ func (_q *PostQuery) QueryMessageIds() *PostMessageIdQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(post.Table, post.FieldID, selector),
-			sqlgraph.To(postmessageid.Table, postmessageid.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, post.MessageIdsTable, post.MessageIdsColumn),
+			sqlgraph.From(imagehash.Table, imagehash.FieldID, selector),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, imagehash.PostTable, imagehash.PostColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -86,9 +86,9 @@ func (_q *PostQuery) QueryMessageIds() *PostMessageIdQuery {
 	return query
 }
 
-// QueryImageHash chains the current query on the "image_hash" edge.
-func (_q *PostQuery) QueryImageHash() *ImageHashQuery {
-	query := (&ImageHashClient{config: _q.config}).Query()
+// QueryUploadTask chains the current query on the "upload_task" edge.
+func (_q *ImageHashQuery) QueryUploadTask() *UploadTaskQuery {
+	query := (&UploadTaskClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -98,9 +98,9 @@ func (_q *PostQuery) QueryImageHash() *ImageHashQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(post.Table, post.FieldID, selector),
-			sqlgraph.To(imagehash.Table, imagehash.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, post.ImageHashTable, post.ImageHashColumn),
+			sqlgraph.From(imagehash.Table, imagehash.FieldID, selector),
+			sqlgraph.To(uploadtask.Table, uploadtask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, imagehash.UploadTaskTable, imagehash.UploadTaskColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -108,21 +108,21 @@ func (_q *PostQuery) QueryImageHash() *ImageHashQuery {
 	return query
 }
 
-// First returns the first Post entity from the query.
-// Returns a *NotFoundError when no Post was found.
-func (_q *PostQuery) First(ctx context.Context) (*Post, error) {
+// First returns the first ImageHash entity from the query.
+// Returns a *NotFoundError when no ImageHash was found.
+func (_q *ImageHashQuery) First(ctx context.Context) (*ImageHash, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{post.Label}
+		return nil, &NotFoundError{imagehash.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *PostQuery) FirstX(ctx context.Context) *Post {
+func (_q *ImageHashQuery) FirstX(ctx context.Context) *ImageHash {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -130,22 +130,22 @@ func (_q *PostQuery) FirstX(ctx context.Context) *Post {
 	return node
 }
 
-// FirstID returns the first Post ID from the query.
-// Returns a *NotFoundError when no Post ID was found.
-func (_q *PostQuery) FirstID(ctx context.Context) (id uuidv7.UUID, err error) {
-	var ids []uuidv7.UUID
+// FirstID returns the first ImageHash ID from the query.
+// Returns a *NotFoundError when no ImageHash ID was found.
+func (_q *ImageHashQuery) FirstID(ctx context.Context) (id int, err error) {
+	var ids []int
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{post.Label}
+		err = &NotFoundError{imagehash.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *PostQuery) FirstIDX(ctx context.Context) uuidv7.UUID {
+func (_q *ImageHashQuery) FirstIDX(ctx context.Context) int {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -153,10 +153,10 @@ func (_q *PostQuery) FirstIDX(ctx context.Context) uuidv7.UUID {
 	return id
 }
 
-// Only returns a single Post entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Post entity is found.
-// Returns a *NotFoundError when no Post entities are found.
-func (_q *PostQuery) Only(ctx context.Context) (*Post, error) {
+// Only returns a single ImageHash entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one ImageHash entity is found.
+// Returns a *NotFoundError when no ImageHash entities are found.
+func (_q *ImageHashQuery) Only(ctx context.Context) (*ImageHash, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -165,14 +165,14 @@ func (_q *PostQuery) Only(ctx context.Context) (*Post, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{post.Label}
+		return nil, &NotFoundError{imagehash.Label}
 	default:
-		return nil, &NotSingularError{post.Label}
+		return nil, &NotSingularError{imagehash.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *PostQuery) OnlyX(ctx context.Context) *Post {
+func (_q *ImageHashQuery) OnlyX(ctx context.Context) *ImageHash {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -180,11 +180,11 @@ func (_q *PostQuery) OnlyX(ctx context.Context) *Post {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Post ID in the query.
-// Returns a *NotSingularError when more than one Post ID is found.
+// OnlyID is like Only, but returns the only ImageHash ID in the query.
+// Returns a *NotSingularError when more than one ImageHash ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *PostQuery) OnlyID(ctx context.Context) (id uuidv7.UUID, err error) {
-	var ids []uuidv7.UUID
+func (_q *ImageHashQuery) OnlyID(ctx context.Context) (id int, err error) {
+	var ids []int
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -192,15 +192,15 @@ func (_q *PostQuery) OnlyID(ctx context.Context) (id uuidv7.UUID, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{post.Label}
+		err = &NotFoundError{imagehash.Label}
 	default:
-		err = &NotSingularError{post.Label}
+		err = &NotSingularError{imagehash.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *PostQuery) OnlyIDX(ctx context.Context) uuidv7.UUID {
+func (_q *ImageHashQuery) OnlyIDX(ctx context.Context) int {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -208,18 +208,18 @@ func (_q *PostQuery) OnlyIDX(ctx context.Context) uuidv7.UUID {
 	return id
 }
 
-// All executes the query and returns a list of Posts.
-func (_q *PostQuery) All(ctx context.Context) ([]*Post, error) {
+// All executes the query and returns a list of ImageHashes.
+func (_q *ImageHashQuery) All(ctx context.Context) ([]*ImageHash, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*Post, *PostQuery]()
-	return withInterceptors[[]*Post](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*ImageHash, *ImageHashQuery]()
+	return withInterceptors[[]*ImageHash](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *PostQuery) AllX(ctx context.Context) []*Post {
+func (_q *ImageHashQuery) AllX(ctx context.Context) []*ImageHash {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -227,20 +227,20 @@ func (_q *PostQuery) AllX(ctx context.Context) []*Post {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Post IDs.
-func (_q *PostQuery) IDs(ctx context.Context) (ids []uuidv7.UUID, err error) {
+// IDs executes the query and returns a list of ImageHash IDs.
+func (_q *ImageHashQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(post.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(imagehash.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *PostQuery) IDsX(ctx context.Context) []uuidv7.UUID {
+func (_q *ImageHashQuery) IDsX(ctx context.Context) []int {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -249,16 +249,16 @@ func (_q *PostQuery) IDsX(ctx context.Context) []uuidv7.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *PostQuery) Count(ctx context.Context) (int, error) {
+func (_q *ImageHashQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*PostQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*ImageHashQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *PostQuery) CountX(ctx context.Context) int {
+func (_q *ImageHashQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -267,7 +267,7 @@ func (_q *PostQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *PostQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *ImageHashQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -280,7 +280,7 @@ func (_q *PostQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *PostQuery) ExistX(ctx context.Context) bool {
+func (_q *ImageHashQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -288,45 +288,45 @@ func (_q *PostQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the PostQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the ImageHashQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *PostQuery) Clone() *PostQuery {
+func (_q *ImageHashQuery) Clone() *ImageHashQuery {
 	if _q == nil {
 		return nil
 	}
-	return &PostQuery{
+	return &ImageHashQuery{
 		config:         _q.config,
 		ctx:            _q.ctx.Clone(),
-		order:          append([]post.OrderOption{}, _q.order...),
+		order:          append([]imagehash.OrderOption{}, _q.order...),
 		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.Post{}, _q.predicates...),
-		withMessageIds: _q.withMessageIds.Clone(),
-		withImageHash:  _q.withImageHash.Clone(),
+		predicates:     append([]predicate.ImageHash{}, _q.predicates...),
+		withPost:       _q.withPost.Clone(),
+		withUploadTask: _q.withUploadTask.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithMessageIds tells the query-builder to eager-load the nodes that are connected to
-// the "message_ids" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *PostQuery) WithMessageIds(opts ...func(*PostMessageIdQuery)) *PostQuery {
-	query := (&PostMessageIdClient{config: _q.config}).Query()
+// WithPost tells the query-builder to eager-load the nodes that are connected to
+// the "post" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ImageHashQuery) WithPost(opts ...func(*PostQuery)) *ImageHashQuery {
+	query := (&PostClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withMessageIds = query
+	_q.withPost = query
 	return _q
 }
 
-// WithImageHash tells the query-builder to eager-load the nodes that are connected to
-// the "image_hash" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *PostQuery) WithImageHash(opts ...func(*ImageHashQuery)) *PostQuery {
-	query := (&ImageHashClient{config: _q.config}).Query()
+// WithUploadTask tells the query-builder to eager-load the nodes that are connected to
+// the "upload_task" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ImageHashQuery) WithUploadTask(opts ...func(*UploadTaskQuery)) *ImageHashQuery {
+	query := (&UploadTaskClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withImageHash = query
+	_q.withUploadTask = query
 	return _q
 }
 
@@ -336,19 +336,19 @@ func (_q *PostQuery) WithImageHash(opts ...func(*ImageHashQuery)) *PostQuery {
 // Example:
 //
 //	var v []struct {
-//		Type post.Type `json:"type,omitempty"`
+//		ImageHash string `json:"image_hash,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Post.Query().
-//		GroupBy(post.FieldType).
+//	client.ImageHash.Query().
+//		GroupBy(imagehash.FieldImageHash).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *PostQuery) GroupBy(field string, fields ...string) *PostGroupBy {
+func (_q *ImageHashQuery) GroupBy(field string, fields ...string) *ImageHashGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &PostGroupBy{build: _q}
+	grbuild := &ImageHashGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = post.Label
+	grbuild.label = imagehash.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -359,26 +359,26 @@ func (_q *PostQuery) GroupBy(field string, fields ...string) *PostGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Type post.Type `json:"type,omitempty"`
+//		ImageHash string `json:"image_hash,omitempty"`
 //	}
 //
-//	client.Post.Query().
-//		Select(post.FieldType).
+//	client.ImageHash.Query().
+//		Select(imagehash.FieldImageHash).
 //		Scan(ctx, &v)
-func (_q *PostQuery) Select(fields ...string) *PostSelect {
+func (_q *ImageHashQuery) Select(fields ...string) *ImageHashSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &PostSelect{PostQuery: _q}
-	sbuild.label = post.Label
+	sbuild := &ImageHashSelect{ImageHashQuery: _q}
+	sbuild.label = imagehash.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a PostSelect configured with the given aggregations.
-func (_q *PostQuery) Aggregate(fns ...AggregateFunc) *PostSelect {
+// Aggregate returns a ImageHashSelect configured with the given aggregations.
+func (_q *ImageHashQuery) Aggregate(fns ...AggregateFunc) *ImageHashSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *PostQuery) prepareQuery(ctx context.Context) error {
+func (_q *ImageHashQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -390,7 +390,7 @@ func (_q *PostQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !post.ValidColumn(f) {
+		if !imagehash.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -404,20 +404,27 @@ func (_q *PostQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, error) {
+func (_q *ImageHashQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*ImageHash, error) {
 	var (
-		nodes       = []*Post{}
+		nodes       = []*ImageHash{}
+		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			_q.withMessageIds != nil,
-			_q.withImageHash != nil,
+			_q.withPost != nil,
+			_q.withUploadTask != nil,
 		}
 	)
+	if _q.withPost != nil || _q.withUploadTask != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, imagehash.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*Post).scanValues(nil, columns)
+		return (*ImageHash).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Post{config: _q.config}
+		node := &ImageHash{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -431,83 +438,87 @@ func (_q *PostQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Post, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withMessageIds; query != nil {
-		if err := _q.loadMessageIds(ctx, query, nodes,
-			func(n *Post) { n.Edges.MessageIds = []*PostMessageId{} },
-			func(n *Post, e *PostMessageId) { n.Edges.MessageIds = append(n.Edges.MessageIds, e) }); err != nil {
+	if query := _q.withPost; query != nil {
+		if err := _q.loadPost(ctx, query, nodes, nil,
+			func(n *ImageHash, e *Post) { n.Edges.Post = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withImageHash; query != nil {
-		if err := _q.loadImageHash(ctx, query, nodes, nil,
-			func(n *Post, e *ImageHash) { n.Edges.ImageHash = e }); err != nil {
+	if query := _q.withUploadTask; query != nil {
+		if err := _q.loadUploadTask(ctx, query, nodes, nil,
+			func(n *ImageHash, e *UploadTask) { n.Edges.UploadTask = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *PostQuery) loadMessageIds(ctx context.Context, query *PostMessageIdQuery, nodes []*Post, init func(*Post), assign func(*Post, *PostMessageId)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuidv7.UUID]*Post)
+func (_q *ImageHashQuery) loadPost(ctx context.Context, query *PostQuery, nodes []*ImageHash, init func(*ImageHash), assign func(*ImageHash, *Post)) error {
+	ids := make([]uuidv7.UUID, 0, len(nodes))
+	nodeids := make(map[uuidv7.UUID][]*ImageHash)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
+		if nodes[i].post_image_hash == nil {
+			continue
 		}
+		fk := *nodes[i].post_image_hash
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.PostMessageId(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(post.MessageIdsColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(post.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.post_message_ids
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "post_message_ids" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "post_message_ids" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "post_image_hash" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
-func (_q *PostQuery) loadImageHash(ctx context.Context, query *ImageHashQuery, nodes []*Post, init func(*Post), assign func(*Post, *ImageHash)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuidv7.UUID]*Post)
+func (_q *ImageHashQuery) loadUploadTask(ctx context.Context, query *UploadTaskQuery, nodes []*ImageHash, init func(*ImageHash), assign func(*ImageHash, *UploadTask)) error {
+	ids := make([]uuidv7.UUID, 0, len(nodes))
+	nodeids := make(map[uuidv7.UUID][]*ImageHash)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
+		if nodes[i].upload_task_image_hash == nil {
+			continue
+		}
+		fk := *nodes[i].upload_task_image_hash
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
 	}
-	query.withFKs = true
-	query.Where(predicate.ImageHash(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(post.ImageHashColumn), fks...))
-	}))
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(uploadtask.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.post_image_hash
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "post_image_hash" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "post_image_hash" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "upload_task_image_hash" returned %v`, n.ID)
 		}
-		assign(node, n)
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }
 
-func (_q *PostQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *ImageHashQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -516,8 +527,8 @@ func (_q *PostQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *PostQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(post.Table, post.Columns, sqlgraph.NewFieldSpec(post.FieldID, field.TypeUUID))
+func (_q *ImageHashQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(imagehash.Table, imagehash.Columns, sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -526,9 +537,9 @@ func (_q *PostQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, post.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, imagehash.FieldID)
 		for i := range fields {
-			if fields[i] != post.FieldID {
+			if fields[i] != imagehash.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
@@ -556,12 +567,12 @@ func (_q *PostQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *PostQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *ImageHashQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(post.Table)
+	t1 := builder.Table(imagehash.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = post.Columns
+		columns = imagehash.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -588,28 +599,28 @@ func (_q *PostQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// PostGroupBy is the group-by builder for Post entities.
-type PostGroupBy struct {
+// ImageHashGroupBy is the group-by builder for ImageHash entities.
+type ImageHashGroupBy struct {
 	selector
-	build *PostQuery
+	build *ImageHashQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *PostGroupBy) Aggregate(fns ...AggregateFunc) *PostGroupBy {
+func (_g *ImageHashGroupBy) Aggregate(fns ...AggregateFunc) *ImageHashGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *PostGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *ImageHashGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*PostQuery, *PostGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*ImageHashQuery, *ImageHashGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *PostGroupBy) sqlScan(ctx context.Context, root *PostQuery, v any) error {
+func (_g *ImageHashGroupBy) sqlScan(ctx context.Context, root *ImageHashQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -636,28 +647,28 @@ func (_g *PostGroupBy) sqlScan(ctx context.Context, root *PostQuery, v any) erro
 	return sql.ScanSlice(rows, v)
 }
 
-// PostSelect is the builder for selecting fields of Post entities.
-type PostSelect struct {
-	*PostQuery
+// ImageHashSelect is the builder for selecting fields of ImageHash entities.
+type ImageHashSelect struct {
+	*ImageHashQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *PostSelect) Aggregate(fns ...AggregateFunc) *PostSelect {
+func (_s *ImageHashSelect) Aggregate(fns ...AggregateFunc) *ImageHashSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *PostSelect) Scan(ctx context.Context, v any) error {
+func (_s *ImageHashSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*PostQuery, *PostSelect](ctx, _s.PostQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*ImageHashQuery, *ImageHashSelect](ctx, _s.ImageHashQuery, _s, _s.inters, v)
 }
 
-func (_s *PostSelect) sqlScan(ctx context.Context, root *PostQuery, v any) error {
+func (_s *ImageHashSelect) sqlScan(ctx context.Context, root *ImageHashQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

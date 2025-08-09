@@ -11,6 +11,7 @@ import (
 
 	"channel-helper-go/ent/migrate"
 
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/postmessageid"
 	"channel-helper-go/ent/uploadtask"
@@ -27,6 +28,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// ImageHash is the client for interacting with the ImageHash builders.
+	ImageHash *ImageHashClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
 	// PostMessageId is the client for interacting with the PostMessageId builders.
@@ -44,6 +47,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.ImageHash = NewImageHashClient(c.config)
 	c.Post = NewPostClient(c.config)
 	c.PostMessageId = NewPostMessageIdClient(c.config)
 	c.UploadTask = NewUploadTaskClient(c.config)
@@ -139,6 +143,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:           ctx,
 		config:        cfg,
+		ImageHash:     NewImageHashClient(cfg),
 		Post:          NewPostClient(cfg),
 		PostMessageId: NewPostMessageIdClient(cfg),
 		UploadTask:    NewUploadTaskClient(cfg),
@@ -161,6 +166,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:           ctx,
 		config:        cfg,
+		ImageHash:     NewImageHashClient(cfg),
 		Post:          NewPostClient(cfg),
 		PostMessageId: NewPostMessageIdClient(cfg),
 		UploadTask:    NewUploadTaskClient(cfg),
@@ -170,7 +176,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Post.
+//		ImageHash.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -192,6 +198,7 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.ImageHash.Use(hooks...)
 	c.Post.Use(hooks...)
 	c.PostMessageId.Use(hooks...)
 	c.UploadTask.Use(hooks...)
@@ -200,6 +207,7 @@ func (c *Client) Use(hooks ...Hook) {
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
+	c.ImageHash.Intercept(interceptors...)
 	c.Post.Intercept(interceptors...)
 	c.PostMessageId.Intercept(interceptors...)
 	c.UploadTask.Intercept(interceptors...)
@@ -208,6 +216,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *ImageHashMutation:
+		return c.ImageHash.mutate(ctx, m)
 	case *PostMutation:
 		return c.Post.mutate(ctx, m)
 	case *PostMessageIdMutation:
@@ -216,6 +226,171 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UploadTask.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// ImageHashClient is a client for the ImageHash schema.
+type ImageHashClient struct {
+	config
+}
+
+// NewImageHashClient returns a client for the ImageHash from the given config.
+func NewImageHashClient(c config) *ImageHashClient {
+	return &ImageHashClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `imagehash.Hooks(f(g(h())))`.
+func (c *ImageHashClient) Use(hooks ...Hook) {
+	c.hooks.ImageHash = append(c.hooks.ImageHash, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `imagehash.Intercept(f(g(h())))`.
+func (c *ImageHashClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ImageHash = append(c.inters.ImageHash, interceptors...)
+}
+
+// Create returns a builder for creating a ImageHash entity.
+func (c *ImageHashClient) Create() *ImageHashCreate {
+	mutation := newImageHashMutation(c.config, OpCreate)
+	return &ImageHashCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ImageHash entities.
+func (c *ImageHashClient) CreateBulk(builders ...*ImageHashCreate) *ImageHashCreateBulk {
+	return &ImageHashCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ImageHashClient) MapCreateBulk(slice any, setFunc func(*ImageHashCreate, int)) *ImageHashCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ImageHashCreateBulk{err: fmt.Errorf("calling to ImageHashClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ImageHashCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ImageHashCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ImageHash.
+func (c *ImageHashClient) Update() *ImageHashUpdate {
+	mutation := newImageHashMutation(c.config, OpUpdate)
+	return &ImageHashUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ImageHashClient) UpdateOne(_m *ImageHash) *ImageHashUpdateOne {
+	mutation := newImageHashMutation(c.config, OpUpdateOne, withImageHash(_m))
+	return &ImageHashUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ImageHashClient) UpdateOneID(id int) *ImageHashUpdateOne {
+	mutation := newImageHashMutation(c.config, OpUpdateOne, withImageHashID(id))
+	return &ImageHashUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ImageHash.
+func (c *ImageHashClient) Delete() *ImageHashDelete {
+	mutation := newImageHashMutation(c.config, OpDelete)
+	return &ImageHashDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ImageHashClient) DeleteOne(_m *ImageHash) *ImageHashDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ImageHashClient) DeleteOneID(id int) *ImageHashDeleteOne {
+	builder := c.Delete().Where(imagehash.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ImageHashDeleteOne{builder}
+}
+
+// Query returns a query builder for ImageHash.
+func (c *ImageHashClient) Query() *ImageHashQuery {
+	return &ImageHashQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeImageHash},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ImageHash entity by its id.
+func (c *ImageHashClient) Get(ctx context.Context, id int) (*ImageHash, error) {
+	return c.Query().Where(imagehash.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ImageHashClient) GetX(ctx context.Context, id int) *ImageHash {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPost queries the post edge of a ImageHash.
+func (c *ImageHashClient) QueryPost(_m *ImageHash) *PostQuery {
+	query := (&PostClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(imagehash.Table, imagehash.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, imagehash.PostTable, imagehash.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUploadTask queries the upload_task edge of a ImageHash.
+func (c *ImageHashClient) QueryUploadTask(_m *ImageHash) *UploadTaskQuery {
+	query := (&UploadTaskClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(imagehash.Table, imagehash.FieldID, id),
+			sqlgraph.To(uploadtask.Table, uploadtask.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, imagehash.UploadTaskTable, imagehash.UploadTaskColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ImageHashClient) Hooks() []Hook {
+	return c.hooks.ImageHash
+}
+
+// Interceptors returns the client interceptors.
+func (c *ImageHashClient) Interceptors() []Interceptor {
+	return c.inters.ImageHash
+}
+
+func (c *ImageHashClient) mutate(ctx context.Context, m *ImageHashMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ImageHashCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ImageHashUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ImageHashUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ImageHashDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ImageHash mutation op: %q", m.Op())
 	}
 }
 
@@ -336,6 +511,22 @@ func (c *PostClient) QueryMessageIds(_m *Post) *PostMessageIdQuery {
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(postmessageid.Table, postmessageid.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, post.MessageIdsTable, post.MessageIdsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryImageHash queries the image_hash edge of a Post.
+func (c *PostClient) QueryImageHash(_m *Post) *ImageHashQuery {
+	query := (&ImageHashClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(imagehash.Table, imagehash.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, post.ImageHashTable, post.ImageHashColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -625,6 +816,22 @@ func (c *UploadTaskClient) GetX(ctx context.Context, id uuidv7.UUID) *UploadTask
 	return obj
 }
 
+// QueryImageHash queries the image_hash edge of a UploadTask.
+func (c *UploadTaskClient) QueryImageHash(_m *UploadTask) *ImageHashQuery {
+	query := (&ImageHashClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(uploadtask.Table, uploadtask.FieldID, id),
+			sqlgraph.To(imagehash.Table, imagehash.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, uploadtask.ImageHashTable, uploadtask.ImageHashColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UploadTaskClient) Hooks() []Hook {
 	return c.hooks.UploadTask
@@ -653,9 +860,9 @@ func (c *UploadTaskClient) mutate(ctx context.Context, m *UploadTaskMutation) (V
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Post, PostMessageId, UploadTask []ent.Hook
+		ImageHash, Post, PostMessageId, UploadTask []ent.Hook
 	}
 	inters struct {
-		Post, PostMessageId, UploadTask []ent.Interceptor
+		ImageHash, Post, PostMessageId, UploadTask []ent.Interceptor
 	}
 )

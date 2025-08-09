@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/postmessageid"
 	"channel-helper-go/ent/predicate"
@@ -105,26 +106,6 @@ func (_u *PostUpdate) ClearSentAt() *PostUpdate {
 	return _u
 }
 
-// SetImageHash sets the "image_hash" field.
-func (_u *PostUpdate) SetImageHash(v string) *PostUpdate {
-	_u.mutation.SetImageHash(v)
-	return _u
-}
-
-// SetNillableImageHash sets the "image_hash" field if the given value is not nil.
-func (_u *PostUpdate) SetNillableImageHash(v *string) *PostUpdate {
-	if v != nil {
-		_u.SetImageHash(*v)
-	}
-	return _u
-}
-
-// ClearImageHash clears the value of the "image_hash" field.
-func (_u *PostUpdate) ClearImageHash() *PostUpdate {
-	_u.mutation.ClearImageHash()
-	return _u
-}
-
 // AddMessageIDIDs adds the "message_ids" edge to the PostMessageId entity by IDs.
 func (_u *PostUpdate) AddMessageIDIDs(ids ...int) *PostUpdate {
 	_u.mutation.AddMessageIDIDs(ids...)
@@ -138,6 +119,25 @@ func (_u *PostUpdate) AddMessageIds(v ...*PostMessageId) *PostUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddMessageIDIDs(ids...)
+}
+
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by ID.
+func (_u *PostUpdate) SetImageHashID(id int) *PostUpdate {
+	_u.mutation.SetImageHashID(id)
+	return _u
+}
+
+// SetNillableImageHashID sets the "image_hash" edge to the ImageHash entity by ID if the given value is not nil.
+func (_u *PostUpdate) SetNillableImageHashID(id *int) *PostUpdate {
+	if id != nil {
+		_u = _u.SetImageHashID(*id)
+	}
+	return _u
+}
+
+// SetImageHash sets the "image_hash" edge to the ImageHash entity.
+func (_u *PostUpdate) SetImageHash(v *ImageHash) *PostUpdate {
+	return _u.SetImageHashID(v.ID)
 }
 
 // Mutation returns the PostMutation object of the builder.
@@ -164,6 +164,12 @@ func (_u *PostUpdate) RemoveMessageIds(v ...*PostMessageId) *PostUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMessageIDIDs(ids...)
+}
+
+// ClearImageHash clears the "image_hash" edge to the ImageHash entity.
+func (_u *PostUpdate) ClearImageHash() *PostUpdate {
+	_u.mutation.ClearImageHash()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -233,12 +239,6 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(post.FieldSentAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.ImageHash(); ok {
-		_spec.SetField(post.FieldImageHash, field.TypeString, value)
-	}
-	if _u.mutation.ImageHashCleared() {
-		_spec.ClearField(post.FieldImageHash, field.TypeString)
-	}
 	if _u.mutation.MessageIdsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -277,6 +277,35 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(postmessageid.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ImageHashCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.ImageHashTable,
+			Columns: []string{post.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ImageHashIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.ImageHashTable,
+			Columns: []string{post.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -380,26 +409,6 @@ func (_u *PostUpdateOne) ClearSentAt() *PostUpdateOne {
 	return _u
 }
 
-// SetImageHash sets the "image_hash" field.
-func (_u *PostUpdateOne) SetImageHash(v string) *PostUpdateOne {
-	_u.mutation.SetImageHash(v)
-	return _u
-}
-
-// SetNillableImageHash sets the "image_hash" field if the given value is not nil.
-func (_u *PostUpdateOne) SetNillableImageHash(v *string) *PostUpdateOne {
-	if v != nil {
-		_u.SetImageHash(*v)
-	}
-	return _u
-}
-
-// ClearImageHash clears the value of the "image_hash" field.
-func (_u *PostUpdateOne) ClearImageHash() *PostUpdateOne {
-	_u.mutation.ClearImageHash()
-	return _u
-}
-
 // AddMessageIDIDs adds the "message_ids" edge to the PostMessageId entity by IDs.
 func (_u *PostUpdateOne) AddMessageIDIDs(ids ...int) *PostUpdateOne {
 	_u.mutation.AddMessageIDIDs(ids...)
@@ -413,6 +422,25 @@ func (_u *PostUpdateOne) AddMessageIds(v ...*PostMessageId) *PostUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddMessageIDIDs(ids...)
+}
+
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by ID.
+func (_u *PostUpdateOne) SetImageHashID(id int) *PostUpdateOne {
+	_u.mutation.SetImageHashID(id)
+	return _u
+}
+
+// SetNillableImageHashID sets the "image_hash" edge to the ImageHash entity by ID if the given value is not nil.
+func (_u *PostUpdateOne) SetNillableImageHashID(id *int) *PostUpdateOne {
+	if id != nil {
+		_u = _u.SetImageHashID(*id)
+	}
+	return _u
+}
+
+// SetImageHash sets the "image_hash" edge to the ImageHash entity.
+func (_u *PostUpdateOne) SetImageHash(v *ImageHash) *PostUpdateOne {
+	return _u.SetImageHashID(v.ID)
 }
 
 // Mutation returns the PostMutation object of the builder.
@@ -439,6 +467,12 @@ func (_u *PostUpdateOne) RemoveMessageIds(v ...*PostMessageId) *PostUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveMessageIDIDs(ids...)
+}
+
+// ClearImageHash clears the "image_hash" edge to the ImageHash entity.
+func (_u *PostUpdateOne) ClearImageHash() *PostUpdateOne {
+	_u.mutation.ClearImageHash()
+	return _u
 }
 
 // Where appends a list predicates to the PostUpdate builder.
@@ -538,12 +572,6 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(post.FieldSentAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.ImageHash(); ok {
-		_spec.SetField(post.FieldImageHash, field.TypeString, value)
-	}
-	if _u.mutation.ImageHashCleared() {
-		_spec.ClearField(post.FieldImageHash, field.TypeString)
-	}
 	if _u.mutation.MessageIdsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -582,6 +610,35 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(postmessageid.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ImageHashCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.ImageHashTable,
+			Columns: []string{post.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ImageHashIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.ImageHashTable,
+			Columns: []string{post.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

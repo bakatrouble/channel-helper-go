@@ -113,6 +113,7 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 
 	var posts []*ent.PostCreate
 	var postMessageIds []*ent.PostMessageIdCreate
+	var imageHashes []*ent.ImageHashCreate
 	var hashTotal int64
 	pool := pond.NewPool(runtime.NumCPU())
 	for _, item := range items {
@@ -136,11 +137,15 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 		if item.Type == post.TypePhoto {
 			hashTotal += 1
 			hashBar.SetTotal(hashTotal, false)
-			i := len(posts) - 1
+			closurePostId := postId
 			pool.Submit(func() {
 				ComputeHash(item.FileId, imageDirectory, func(hash *string) {
 					hashBar.Increment()
-					posts[i] = posts[i].SetNillableImageHash(hash)
+					imageHashes = append(imageHashes,
+						db.ImageHash.Create().
+							SetImageHash(*hash).
+							SetPostID(closurePostId),
+					)
 				})
 			})
 		}
@@ -170,6 +175,13 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 		err = db.PostMessageId.CreateBulk(chunk...).Exec(ctx)
 		if err != nil {
 			_, _ = fmt.Fprintf(cmd, "Failed to insert post message IDs: %v\n", err)
+			return go_console.ExitError
+		}
+	}
+	for chunk := range slices.Chunk(imageHashes, 1000) {
+		err = db.ImageHash.CreateBulk(chunk...).Exec(ctx)
+		if err != nil {
+			_, _ = fmt.Fprintf(cmd, "Failed to insert image hash %v\n", err)
 			return go_console.ExitError
 		}
 	}

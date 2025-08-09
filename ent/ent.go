@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/postmessageid"
 	"channel-helper-go/ent/uploadtask"
@@ -75,6 +76,7 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			imagehash.Table:     imagehash.ValidColumn,
 			post.Table:          post.ValidColumn,
 			postmessageid.Table: postmessageid.ValidColumn,
 			uploadtask.Table:    uploadtask.ValidColumn,

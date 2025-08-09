@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/postmessageid"
 	"context"
@@ -76,20 +77,6 @@ func (_c *PostCreate) SetNillableSentAt(v *time.Time) *PostCreate {
 	return _c
 }
 
-// SetImageHash sets the "image_hash" field.
-func (_c *PostCreate) SetImageHash(v string) *PostCreate {
-	_c.mutation.SetImageHash(v)
-	return _c
-}
-
-// SetNillableImageHash sets the "image_hash" field if the given value is not nil.
-func (_c *PostCreate) SetNillableImageHash(v *string) *PostCreate {
-	if v != nil {
-		_c.SetImageHash(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *PostCreate) SetID(v uuidv7.UUID) *PostCreate {
 	_c.mutation.SetID(v)
@@ -117,6 +104,25 @@ func (_c *PostCreate) AddMessageIds(v ...*PostMessageId) *PostCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddMessageIDIDs(ids...)
+}
+
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by ID.
+func (_c *PostCreate) SetImageHashID(id int) *PostCreate {
+	_c.mutation.SetImageHashID(id)
+	return _c
+}
+
+// SetNillableImageHashID sets the "image_hash" edge to the ImageHash entity by ID if the given value is not nil.
+func (_c *PostCreate) SetNillableImageHashID(id *int) *PostCreate {
+	if id != nil {
+		_c = _c.SetImageHashID(*id)
+	}
+	return _c
+}
+
+// SetImageHash sets the "image_hash" edge to the ImageHash entity.
+func (_c *PostCreate) SetImageHash(v *ImageHash) *PostCreate {
+	return _c.SetImageHashID(v.ID)
 }
 
 // Mutation returns the PostMutation object of the builder.
@@ -242,10 +248,6 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 		_spec.SetField(post.FieldSentAt, field.TypeTime, value)
 		_node.SentAt = value
 	}
-	if value, ok := _c.mutation.ImageHash(); ok {
-		_spec.SetField(post.FieldImageHash, field.TypeString, value)
-		_node.ImageHash = value
-	}
 	if nodes := _c.mutation.MessageIdsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -255,6 +257,22 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(postmessageid.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ImageHashIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   post.ImageHashTable,
+			Columns: []string{post.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

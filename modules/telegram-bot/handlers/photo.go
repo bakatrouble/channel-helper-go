@@ -76,14 +76,29 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 		}
 	}
 
-	createdPost, err := db.Post.Create().
+	tx, err := db.Tx(ctx)
+	if err != nil {
+		logger.With("err", err).Error("failed to start transaction")
+		return nil
+	}
+	createdPost, err := tx.Post.Create().
 		SetType(post.TypePhoto).
 		SetFileID(message.Photo[len(message.Photo)-1].FileID).
-		SetImageHash(hash).
 		Save(ctx)
 	if err != nil {
 		logger.With("err", err).Error("failed to create post")
 		return nil
+	}
+	err = tx.ImageHash.Create().
+		SetPost(createdPost).
+		SetImageHash(hash).
+		Exec(ctx)
+	if err != nil {
+		logger.With("err", err).Error("failed to create image hash")
+		return nil
+	}
+	if err := tx.Commit(); err != nil {
+		logger.With("err", err).Error("failed to commit transaction")
 	}
 	_ = createPostMessageId(ctx, createdPost, &message)
 

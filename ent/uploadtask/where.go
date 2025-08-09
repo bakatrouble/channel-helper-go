@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	uuidv7 "github.com/moroz/uuidv7-go"
 )
 
@@ -73,11 +74,6 @@ func CreatedAt(v time.Time) predicate.UploadTask {
 // SentAt applies equality check predicate on the "sent_at" field. It's identical to SentAtEQ.
 func SentAt(v time.Time) predicate.UploadTask {
 	return predicate.UploadTask(sql.FieldEQ(FieldSentAt, v))
-}
-
-// ImageHash applies equality check predicate on the "image_hash" field. It's identical to ImageHashEQ.
-func ImageHash(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldEQ(FieldImageHash, v))
 }
 
 // TypeEQ applies the EQ predicate on the "type" field.
@@ -250,79 +246,27 @@ func SentAtNotNil() predicate.UploadTask {
 	return predicate.UploadTask(sql.FieldNotNull(FieldSentAt))
 }
 
-// ImageHashEQ applies the EQ predicate on the "image_hash" field.
-func ImageHashEQ(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldEQ(FieldImageHash, v))
+// HasImageHash applies the HasEdge predicate on the "image_hash" edge.
+func HasImageHash() predicate.UploadTask {
+	return predicate.UploadTask(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, ImageHashTable, ImageHashColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
 }
 
-// ImageHashNEQ applies the NEQ predicate on the "image_hash" field.
-func ImageHashNEQ(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldNEQ(FieldImageHash, v))
-}
-
-// ImageHashIn applies the In predicate on the "image_hash" field.
-func ImageHashIn(vs ...string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldIn(FieldImageHash, vs...))
-}
-
-// ImageHashNotIn applies the NotIn predicate on the "image_hash" field.
-func ImageHashNotIn(vs ...string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldNotIn(FieldImageHash, vs...))
-}
-
-// ImageHashGT applies the GT predicate on the "image_hash" field.
-func ImageHashGT(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldGT(FieldImageHash, v))
-}
-
-// ImageHashGTE applies the GTE predicate on the "image_hash" field.
-func ImageHashGTE(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldGTE(FieldImageHash, v))
-}
-
-// ImageHashLT applies the LT predicate on the "image_hash" field.
-func ImageHashLT(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldLT(FieldImageHash, v))
-}
-
-// ImageHashLTE applies the LTE predicate on the "image_hash" field.
-func ImageHashLTE(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldLTE(FieldImageHash, v))
-}
-
-// ImageHashContains applies the Contains predicate on the "image_hash" field.
-func ImageHashContains(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldContains(FieldImageHash, v))
-}
-
-// ImageHashHasPrefix applies the HasPrefix predicate on the "image_hash" field.
-func ImageHashHasPrefix(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldHasPrefix(FieldImageHash, v))
-}
-
-// ImageHashHasSuffix applies the HasSuffix predicate on the "image_hash" field.
-func ImageHashHasSuffix(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldHasSuffix(FieldImageHash, v))
-}
-
-// ImageHashIsNil applies the IsNil predicate on the "image_hash" field.
-func ImageHashIsNil() predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldIsNull(FieldImageHash))
-}
-
-// ImageHashNotNil applies the NotNil predicate on the "image_hash" field.
-func ImageHashNotNil() predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldNotNull(FieldImageHash))
-}
-
-// ImageHashEqualFold applies the EqualFold predicate on the "image_hash" field.
-func ImageHashEqualFold(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldEqualFold(FieldImageHash, v))
-}
-
-// ImageHashContainsFold applies the ContainsFold predicate on the "image_hash" field.
-func ImageHashContainsFold(v string) predicate.UploadTask {
-	return predicate.UploadTask(sql.FieldContainsFold(FieldImageHash, v))
+// HasImageHashWith applies the HasEdge predicate on the "image_hash" edge with a given conditions (other predicates).
+func HasImageHashWith(preds ...predicate.ImageHash) predicate.UploadTask {
+	return predicate.UploadTask(func(s *sql.Selector) {
+		step := newImageHashStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

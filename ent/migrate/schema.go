@@ -8,6 +8,33 @@ import (
 )
 
 var (
+	// ImageHashesColumns holds the columns for the "image_hashes" table.
+	ImageHashesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "image_hash", Type: field.TypeString},
+		{Name: "post_image_hash", Type: field.TypeUUID, Unique: true, Nullable: true},
+		{Name: "upload_task_image_hash", Type: field.TypeUUID, Unique: true, Nullable: true},
+	}
+	// ImageHashesTable holds the schema information for the "image_hashes" table.
+	ImageHashesTable = &schema.Table{
+		Name:       "image_hashes",
+		Columns:    ImageHashesColumns,
+		PrimaryKey: []*schema.Column{ImageHashesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "image_hashes_posts_image_hash",
+				Columns:    []*schema.Column{ImageHashesColumns[2]},
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "image_hashes_upload_tasks_image_hash",
+				Columns:    []*schema.Column{ImageHashesColumns[3]},
+				RefColumns: []*schema.Column{UploadTasksColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// PostsColumns holds the columns for the "posts" table.
 	PostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID, Unique: true},
@@ -16,7 +43,6 @@ var (
 		{Name: "is_sent", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
-		{Name: "image_hash", Type: field.TypeString, Nullable: true},
 	}
 	// PostsTable holds the schema information for the "posts" table.
 	PostsTable = &schema.Table{
@@ -24,11 +50,6 @@ var (
 		Columns:    PostsColumns,
 		PrimaryKey: []*schema.Column{PostsColumns[0]},
 		Indexes: []*schema.Index{
-			{
-				Name:    "post_image_hash",
-				Unique:  false,
-				Columns: []*schema.Column{PostsColumns[6]},
-			},
 			{
 				Name:    "post_is_sent",
 				Unique:  false,
@@ -77,7 +98,6 @@ var (
 		{Name: "is_processed", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
-		{Name: "image_hash", Type: field.TypeString, Nullable: true},
 	}
 	// UploadTasksTable holds the schema information for the "upload_tasks" table.
 	UploadTasksTable = &schema.Table{
@@ -85,11 +105,6 @@ var (
 		Columns:    UploadTasksColumns,
 		PrimaryKey: []*schema.Column{UploadTasksColumns[0]},
 		Indexes: []*schema.Index{
-			{
-				Name:    "uploadtask_image_hash",
-				Unique:  false,
-				Columns: []*schema.Column{UploadTasksColumns[6]},
-			},
 			{
 				Name:    "uploadtask_is_processed",
 				Unique:  false,
@@ -104,6 +119,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ImageHashesTable,
 		PostsTable,
 		PostMessageIdsTable,
 		UploadTasksTable,
@@ -111,5 +127,7 @@ var (
 )
 
 func init() {
+	ImageHashesTable.ForeignKeys[0].RefTable = PostsTable
+	ImageHashesTable.ForeignKeys[1].RefTable = UploadTasksTable
 	PostMessageIdsTable.ForeignKeys[0].RefTable = PostsTable
 }

@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/uploadtask"
 	"context"
 	"errors"
@@ -75,20 +76,6 @@ func (_c *UploadTaskCreate) SetNillableSentAt(v *time.Time) *UploadTaskCreate {
 	return _c
 }
 
-// SetImageHash sets the "image_hash" field.
-func (_c *UploadTaskCreate) SetImageHash(v string) *UploadTaskCreate {
-	_c.mutation.SetImageHash(v)
-	return _c
-}
-
-// SetNillableImageHash sets the "image_hash" field if the given value is not nil.
-func (_c *UploadTaskCreate) SetNillableImageHash(v *string) *UploadTaskCreate {
-	if v != nil {
-		_c.SetImageHash(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *UploadTaskCreate) SetID(v uuidv7.UUID) *UploadTaskCreate {
 	_c.mutation.SetID(v)
@@ -101,6 +88,25 @@ func (_c *UploadTaskCreate) SetNillableID(v *uuidv7.UUID) *UploadTaskCreate {
 		_c.SetID(*v)
 	}
 	return _c
+}
+
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by ID.
+func (_c *UploadTaskCreate) SetImageHashID(id int) *UploadTaskCreate {
+	_c.mutation.SetImageHashID(id)
+	return _c
+}
+
+// SetNillableImageHashID sets the "image_hash" edge to the ImageHash entity by ID if the given value is not nil.
+func (_c *UploadTaskCreate) SetNillableImageHashID(id *int) *UploadTaskCreate {
+	if id != nil {
+		_c = _c.SetImageHashID(*id)
+	}
+	return _c
+}
+
+// SetImageHash sets the "image_hash" edge to the ImageHash entity.
+func (_c *UploadTaskCreate) SetImageHash(v *ImageHash) *UploadTaskCreate {
+	return _c.SetImageHashID(v.ID)
 }
 
 // Mutation returns the UploadTaskMutation object of the builder.
@@ -223,9 +229,21 @@ func (_c *UploadTaskCreate) createSpec() (*UploadTask, *sqlgraph.CreateSpec) {
 		_spec.SetField(uploadtask.FieldSentAt, field.TypeTime, value)
 		_node.SentAt = value
 	}
-	if value, ok := _c.mutation.ImageHash(); ok {
-		_spec.SetField(uploadtask.FieldImageHash, field.TypeString, value)
-		_node.ImageHash = value
+	if nodes := _c.mutation.ImageHashIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   uploadtask.ImageHashTable,
+			Columns: []string{uploadtask.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

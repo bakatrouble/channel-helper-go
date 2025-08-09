@@ -26,10 +26,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldSentAt holds the string denoting the sent_at field in the database.
 	FieldSentAt = "sent_at"
-	// FieldImageHash holds the string denoting the image_hash field in the database.
-	FieldImageHash = "image_hash"
 	// EdgeMessageIds holds the string denoting the message_ids edge name in mutations.
 	EdgeMessageIds = "message_ids"
+	// EdgeImageHash holds the string denoting the image_hash edge name in mutations.
+	EdgeImageHash = "image_hash"
 	// Table holds the table name of the post in the database.
 	Table = "posts"
 	// MessageIdsTable is the table that holds the message_ids relation/edge.
@@ -39,6 +39,13 @@ const (
 	MessageIdsInverseTable = "post_message_ids"
 	// MessageIdsColumn is the table column denoting the message_ids relation/edge.
 	MessageIdsColumn = "post_message_ids"
+	// ImageHashTable is the table that holds the image_hash relation/edge.
+	ImageHashTable = "image_hashes"
+	// ImageHashInverseTable is the table name for the ImageHash entity.
+	// It exists in this package in order to avoid circular dependency with the "imagehash" package.
+	ImageHashInverseTable = "image_hashes"
+	// ImageHashColumn is the table column denoting the image_hash relation/edge.
+	ImageHashColumn = "post_image_hash"
 )
 
 // Columns holds all SQL columns for post fields.
@@ -49,7 +56,6 @@ var Columns = []string{
 	FieldIsSent,
 	FieldCreatedAt,
 	FieldSentAt,
-	FieldImageHash,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -128,11 +134,6 @@ func BySentAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSentAt, opts...).ToFunc()
 }
 
-// ByImageHash orders the results by the image_hash field.
-func ByImageHash(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldImageHash, opts...).ToFunc()
-}
-
 // ByMessageIdsCount orders the results by message_ids count.
 func ByMessageIdsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -146,10 +147,24 @@ func ByMessageIds(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMessageIdsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByImageHashField orders the results by image_hash field.
+func ByImageHashField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newImageHashStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newMessageIdsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MessageIdsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MessageIdsTable, MessageIdsColumn),
+	)
+}
+func newImageHashStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ImageHashInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ImageHashTable, ImageHashColumn),
 	)
 }

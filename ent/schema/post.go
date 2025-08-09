@@ -23,7 +23,6 @@ func (Post) Fields() []ent.Field {
 		field.Bool("is_sent").Default(false),
 		field.Time("created_at").Default(time.Now),
 		field.Time("sent_at").Optional(),
-		field.String("image_hash").Optional(),
 	}
 }
 
@@ -31,12 +30,12 @@ func (Post) Fields() []ent.Field {
 func (Post) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("message_ids", PostMessageId.Type),
+		edge.To("image_hash", ImageHash.Type).Unique(),
 	}
 }
 
 func (Post) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("image_hash"),
 		index.Fields("is_sent"),
 		index.Fields("type"),
 	}

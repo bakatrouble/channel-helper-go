@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/moroz/uuidv7-go"
@@ -22,18 +23,18 @@ func (UploadTask) Fields() []ent.Field {
 		field.Bool("is_processed").Default(false),
 		field.Time("created_at").Default(time.Now),
 		field.Time("sent_at").Optional(),
-		field.String("image_hash").Optional(),
 	}
 }
 
 // Edges of the UploadTask.
 func (UploadTask) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("image_hash", ImageHash.Type).Unique(),
+	}
 }
 
 func (UploadTask) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("image_hash"),
 		index.Fields("is_processed"),
 		index.Fields("type"),
 	}

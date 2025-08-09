@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/predicate"
 	"channel-helper-go/ent/uploadtask"
 	"context"
@@ -102,29 +103,34 @@ func (_u *UploadTaskUpdate) ClearSentAt() *UploadTaskUpdate {
 	return _u
 }
 
-// SetImageHash sets the "image_hash" field.
-func (_u *UploadTaskUpdate) SetImageHash(v string) *UploadTaskUpdate {
-	_u.mutation.SetImageHash(v)
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by ID.
+func (_u *UploadTaskUpdate) SetImageHashID(id int) *UploadTaskUpdate {
+	_u.mutation.SetImageHashID(id)
 	return _u
 }
 
-// SetNillableImageHash sets the "image_hash" field if the given value is not nil.
-func (_u *UploadTaskUpdate) SetNillableImageHash(v *string) *UploadTaskUpdate {
-	if v != nil {
-		_u.SetImageHash(*v)
+// SetNillableImageHashID sets the "image_hash" edge to the ImageHash entity by ID if the given value is not nil.
+func (_u *UploadTaskUpdate) SetNillableImageHashID(id *int) *UploadTaskUpdate {
+	if id != nil {
+		_u = _u.SetImageHashID(*id)
 	}
 	return _u
 }
 
-// ClearImageHash clears the value of the "image_hash" field.
-func (_u *UploadTaskUpdate) ClearImageHash() *UploadTaskUpdate {
-	_u.mutation.ClearImageHash()
-	return _u
+// SetImageHash sets the "image_hash" edge to the ImageHash entity.
+func (_u *UploadTaskUpdate) SetImageHash(v *ImageHash) *UploadTaskUpdate {
+	return _u.SetImageHashID(v.ID)
 }
 
 // Mutation returns the UploadTaskMutation object of the builder.
 func (_u *UploadTaskUpdate) Mutation() *UploadTaskMutation {
 	return _u.mutation
+}
+
+// ClearImageHash clears the "image_hash" edge to the ImageHash entity.
+func (_u *UploadTaskUpdate) ClearImageHash() *UploadTaskUpdate {
+	_u.mutation.ClearImageHash()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -197,11 +203,34 @@ func (_u *UploadTaskUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(uploadtask.FieldSentAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.ImageHash(); ok {
-		_spec.SetField(uploadtask.FieldImageHash, field.TypeString, value)
-	}
 	if _u.mutation.ImageHashCleared() {
-		_spec.ClearField(uploadtask.FieldImageHash, field.TypeString)
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   uploadtask.ImageHashTable,
+			Columns: []string{uploadtask.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ImageHashIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   uploadtask.ImageHashTable,
+			Columns: []string{uploadtask.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -297,29 +326,34 @@ func (_u *UploadTaskUpdateOne) ClearSentAt() *UploadTaskUpdateOne {
 	return _u
 }
 
-// SetImageHash sets the "image_hash" field.
-func (_u *UploadTaskUpdateOne) SetImageHash(v string) *UploadTaskUpdateOne {
-	_u.mutation.SetImageHash(v)
+// SetImageHashID sets the "image_hash" edge to the ImageHash entity by ID.
+func (_u *UploadTaskUpdateOne) SetImageHashID(id int) *UploadTaskUpdateOne {
+	_u.mutation.SetImageHashID(id)
 	return _u
 }
 
-// SetNillableImageHash sets the "image_hash" field if the given value is not nil.
-func (_u *UploadTaskUpdateOne) SetNillableImageHash(v *string) *UploadTaskUpdateOne {
-	if v != nil {
-		_u.SetImageHash(*v)
+// SetNillableImageHashID sets the "image_hash" edge to the ImageHash entity by ID if the given value is not nil.
+func (_u *UploadTaskUpdateOne) SetNillableImageHashID(id *int) *UploadTaskUpdateOne {
+	if id != nil {
+		_u = _u.SetImageHashID(*id)
 	}
 	return _u
 }
 
-// ClearImageHash clears the value of the "image_hash" field.
-func (_u *UploadTaskUpdateOne) ClearImageHash() *UploadTaskUpdateOne {
-	_u.mutation.ClearImageHash()
-	return _u
+// SetImageHash sets the "image_hash" edge to the ImageHash entity.
+func (_u *UploadTaskUpdateOne) SetImageHash(v *ImageHash) *UploadTaskUpdateOne {
+	return _u.SetImageHashID(v.ID)
 }
 
 // Mutation returns the UploadTaskMutation object of the builder.
 func (_u *UploadTaskUpdateOne) Mutation() *UploadTaskMutation {
 	return _u.mutation
+}
+
+// ClearImageHash clears the "image_hash" edge to the ImageHash entity.
+func (_u *UploadTaskUpdateOne) ClearImageHash() *UploadTaskUpdateOne {
+	_u.mutation.ClearImageHash()
+	return _u
 }
 
 // Where appends a list predicates to the UploadTaskUpdate builder.
@@ -422,11 +456,34 @@ func (_u *UploadTaskUpdateOne) sqlSave(ctx context.Context) (_node *UploadTask, 
 	if _u.mutation.SentAtCleared() {
 		_spec.ClearField(uploadtask.FieldSentAt, field.TypeTime)
 	}
-	if value, ok := _u.mutation.ImageHash(); ok {
-		_spec.SetField(uploadtask.FieldImageHash, field.TypeString, value)
-	}
 	if _u.mutation.ImageHashCleared() {
-		_spec.ClearField(uploadtask.FieldImageHash, field.TypeString)
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   uploadtask.ImageHashTable,
+			Columns: []string{uploadtask.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ImageHashIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   uploadtask.ImageHashTable,
+			Columns: []string{uploadtask.ImageHashColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(imagehash.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &UploadTask{config: _u.config}
 	_spec.Assign = _node.assignValues

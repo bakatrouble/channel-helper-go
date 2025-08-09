@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/schema"
 	"channel-helper-go/ent/uploadtask"
@@ -15,6 +16,12 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	imagehashFields := schema.ImageHash{}.Fields()
+	_ = imagehashFields
+	// imagehashDescImageHash is the schema descriptor for image_hash field.
+	imagehashDescImageHash := imagehashFields[0].Descriptor()
+	// imagehash.ImageHashValidator is a validator for the "image_hash" field. It is called by the builders before save.
+	imagehash.ImageHashValidator = imagehashDescImageHash.Validators[0].(func(string) error)
 	postFields := schema.Post{}.Fields()
 	_ = postFields
 	// postDescIsSent is the schema descriptor for is_sent field.

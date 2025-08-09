@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"channel-helper-go/ent/imagehash"
 	"channel-helper-go/ent/uploadtask"
 	"fmt"
 	"strings"
@@ -28,9 +29,30 @@ type UploadTask struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// SentAt holds the value of the "sent_at" field.
 	SentAt time.Time `json:"sent_at,omitempty"`
-	// ImageHash holds the value of the "image_hash" field.
-	ImageHash    string `json:"image_hash,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UploadTaskQuery when eager-loading is set.
+	Edges        UploadTaskEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// UploadTaskEdges holds the relations/edges for other nodes in the graph.
+type UploadTaskEdges struct {
+	// ImageHash holds the value of the image_hash edge.
+	ImageHash *ImageHash `json:"image_hash,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// ImageHashOrErr returns the ImageHash value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UploadTaskEdges) ImageHashOrErr() (*ImageHash, error) {
+	if e.ImageHash != nil {
+		return e.ImageHash, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: imagehash.Label}
+	}
+	return nil, &NotLoadedError{edge: "image_hash"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -42,7 +64,7 @@ func (*UploadTask) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case uploadtask.FieldIsProcessed:
 			values[i] = new(sql.NullBool)
-		case uploadtask.FieldType, uploadtask.FieldImageHash:
+		case uploadtask.FieldType:
 			values[i] = new(sql.NullString)
 		case uploadtask.FieldCreatedAt, uploadtask.FieldSentAt:
 			values[i] = new(sql.NullTime)
@@ -99,12 +121,6 @@ func (_m *UploadTask) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SentAt = value.Time
 			}
-		case uploadtask.FieldImageHash:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field image_hash", values[i])
-			} else if value.Valid {
-				_m.ImageHash = value.String
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -116,6 +132,11 @@ func (_m *UploadTask) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *UploadTask) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryImageHash queries the "image_hash" edge of the UploadTask entity.
+func (_m *UploadTask) QueryImageHash() *ImageHashQuery {
+	return NewUploadTaskClient(_m.config).QueryImageHash(_m)
 }
 
 // Update returns a builder for updating this UploadTask.
@@ -155,9 +176,6 @@ func (_m *UploadTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sent_at=")
 	builder.WriteString(_m.SentAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("image_hash=")
-	builder.WriteString(_m.ImageHash)
 	builder.WriteByte(')')
 	return builder.String()
 }

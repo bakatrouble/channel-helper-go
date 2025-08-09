@@ -50,7 +50,7 @@ func processTask(task *ent.UploadTask, bot *telego.Bot, ctx context.Context) err
 		createdPost, err = postBuilder.
 			SetType(post.TypePhoto).
 			SetFileID(msg.Animation.FileID).
-			SetImageHash(task.ImageHash).
+			SetImageHash(task.Edges.ImageHash).
 			Save(ctx)
 		if err != nil {
 			logger.With("err", err).Error("error creating post")

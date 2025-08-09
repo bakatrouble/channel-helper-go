@@ -15,31 +15,37 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 	db := ctx.Value("db").(*ent.Client)
 	config := ctx.Value("config").(*utils.Config)
 
-	posts, err := db.Post.Query().
+	qb := db.Post.Query().
 		WithImageHash().
 		WithMessageIds().
-		Where(post.TypeEQ(post.TypePhoto)).
-		All(ctx)
-	if err != nil {
-		_, _ = ctx.Bot().SendMessage(ctx, &telego.SendMessageParams{
-			ChatID: message.Chat.ChatID(),
-			Text:   "Failed to retrieve posts from the database",
-		})
-		return err
-	}
-	dump := make([]utils.ImportItem, 0, len(posts))
-	for _, post := range posts {
-		item := utils.ImportItem{
-			Type:       post.Type,
-			FileId:     post.FileID,
-			MessageIds: make([]int, 0, len(post.Edges.MessageIds)),
-			Processed:  post.IsSent,
-			Datetime:   post.CreatedAt,
+		Where(post.TypeEQ(post.TypePhoto))
+
+	totalPosts, err := qb.Count(ctx)
+	i := 0
+	dump := make([]utils.ImportItem, 0, totalPosts)
+	for i < totalPosts {
+		postsChunk, err := db.Post.Query().
+			WithImageHash().
+			Where(post.TypeEQ(post.TypePhoto)).
+			Offset(i).
+			Limit(1000).
+			All(ctx)
+		if err != nil {
+			return err
 		}
-		for _, msgID := range post.Edges.MessageIds {
-			item.MessageIds = append(item.MessageIds, msgID.MessageID)
+		for _, p := range postsChunk {
+			item := utils.ImportItem{
+				Type:       p.Type,
+				FileId:     p.FileID,
+				MessageIds: make([]int, 0, len(p.Edges.MessageIds)),
+				Processed:  p.IsSent,
+				Datetime:   p.CreatedAt,
+			}
+			for _, msgID := range p.Edges.MessageIds {
+				item.MessageIds = append(item.MessageIds, msgID.MessageID)
+			}
+			dump = append(dump, item)
 		}
-		dump = append(dump, item)
 	}
 	j, err := json.MarshalIndent(dump, "", "  ")
 	if err != nil {

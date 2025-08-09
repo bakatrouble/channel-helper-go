@@ -3,7 +3,6 @@ package handlers
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
-	channels "channel-helper-go/modules"
 	"channel-helper-go/utils"
 	"errors"
 	"fmt"
@@ -14,30 +13,32 @@ import (
 )
 
 func PhotoHandler(ctx *th.Context, message telego.Message) error {
-	println("PhotoHandler called")
 	db, _ := ctx.Value("db").(*ent.Client)
-	hub, _ := ctx.Value("hub").(*channels.Hub)
+	hub, _ := ctx.Value("hub").(*utils.Hub)
 	bot := ctx.Bot()
+	logger, _ := ctx.Value("logger").(utils.Logger)
+
+	logger.Info("PhotoHandler called")
 
 	file, err := bot.GetFile(ctx, &telego.GetFileParams{FileID: message.Photo[len(message.Photo)-1].FileID})
 	if err != nil {
-		println("Error getting photo:", err.Error())
+		logger.With("err", err).Error("error getting photo")
 		return err
 	}
 	fileData, err := tu.DownloadFile(bot.FileDownloadURL(file.FilePath))
 	if err != nil {
-		println("Error downloading photo:", err.Error())
+		logger.With("err", err).Error("error downloading photo")
 		return err
 	}
 	hash, err := utils.HashImage(fileData)
 	if err != nil {
-		println("Error hashing photo:", err.Error())
+		logger.With("err", err).Error("error hashing photo")
 		return err
 	}
 
 	duplicate, dPost, dUploadTask, err := ent.PhotoHashExists(hash, ctx, db)
 	if err != nil {
-		println("Error checking for duplicate photo hash:", err.Error())
+		logger.With("err", err).Error("error checking for duplicate photo hash")
 		return err
 	}
 	if duplicate {
@@ -79,7 +80,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 		SetImageHash(hash).
 		Save(ctx)
 	if err != nil {
-		println("Failed to create post:", err.Error())
+		logger.With("err", err).Error("failed to create post")
 		return err
 	}
 	_ = createPostMessageId(ctx, createdPost, &message)
@@ -87,6 +88,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	reactToMessage(ctx, &message)
 
 	hub.PostCreated <- createdPost
+	logger.With("id", createdPost.ID).Info("created photo post id")
 
 	return nil
 }

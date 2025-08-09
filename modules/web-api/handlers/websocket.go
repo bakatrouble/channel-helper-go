@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	channels "channel-helper-go/modules"
+	"channel-helper-go/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/grbit/go-json"
-	"log"
 )
 
 var upgrader = websocket.Upgrader{
@@ -14,11 +13,12 @@ var upgrader = websocket.Upgrader{
 }
 
 func WebsocketHandler(c *gin.Context) {
-	hub := c.MustGet("hub").(*channels.Hub)
+	hub := c.MustGet("hub").(*utils.Hub)
+	logger := c.MustGet("logger").(utils.Logger)
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		println("Failed to upgrade connection:", err.Error())
+		logger.With("err", err).Error("failed to upgrade connection")
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to upgrade connection"})
 		return
 	}
@@ -55,7 +55,7 @@ func WebsocketHandler(c *gin.Context) {
 			_ = conn.WriteJSON(gin.H{"type": "uploadTaskDone", "uploadTask": uploadTask})
 		case msg := <-msgIn:
 			j, _ := json.Marshal(msg)
-			log.Println("msgIn", string(j))
+			logger.With("msg", j).Info("received message from websocket")
 		case <-c.Done():
 			return
 		}

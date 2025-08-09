@@ -17,6 +17,7 @@ type Config struct {
 	ApiKey             string        `yaml:"api_key"`
 	ApiPort            int           `yaml:"api_port"`
 	UploadChatId       int64         `yaml:"upload_chat_id"`
+	Production         bool          `yaml:"production"`
 }
 
 func ParseConfig(configFile string) (*Config, error) {

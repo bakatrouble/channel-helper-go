@@ -4,9 +4,9 @@ import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/uploadtask"
-	channels "channel-helper-go/modules"
 	"channel-helper-go/utils"
 	"context"
+	"errors"
 	"github.com/mymmrac/telego"
 	tu "github.com/mymmrac/telego/telegoutil"
 	"sync"
@@ -17,11 +17,12 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
 	bot := ctx.Value("bot").(*telego.Bot)
-	hub := ctx.Value("hub").(*channels.Hub)
+	hub := ctx.Value("hub").(*utils.Hub)
+	logger := ctx.Value("logger").(utils.Logger)
 
 	tx, err := db.Tx(ctx)
 	if err != nil {
-		println("Error starting transaction:", err.Error())
+		logger.With("err", err).Error("error starting transaction")
 		return err
 	}
 
@@ -42,7 +43,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 			ReplyMarkup: replyMarkup,
 		})
 		if err != nil {
-			println("Error uploading photo:", err.Error())
+			logger.With("err", err).Error("error uploading photo")
 			return err
 		}
 
@@ -52,7 +53,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 			SetImageHash(task.ImageHash).
 			Save(ctx)
 		if err != nil {
-			println("Error creating post:", err.Error())
+			logger.With("err", err).Error("error creating post")
 			return err
 		}
 	case uploadtask.TypeAnimation:
@@ -62,7 +63,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 			ReplyMarkup: replyMarkup,
 		})
 		if err != nil {
-			println("Error uploading photo:", err.Error())
+			logger.With("err", err).Error("error uploading animation")
 			return err
 		}
 
@@ -71,12 +72,12 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 			SetFileID(msg.Animation.FileID).
 			Save(ctx)
 		if err != nil {
-			println("Error creating post:", err.Error())
+			logger.With("err", err).Error("error creating post")
 			return err
 		}
 	default:
-		println("Unsupported upload task type:", task.Type)
-		return err
+		logger.With("type", task.Type).Error("unsupported upload task type")
+		return errors.New("unsupported upload task type")
 	}
 
 	err = tx.UploadTask.UpdateOne(task).
@@ -85,7 +86,7 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 		SetData([]byte{}).
 		Exec(ctx)
 	if err != nil {
-		println("Error updating upload task:", err.Error())
+		logger.With("err", err).Error("error updating upload task")
 		return err
 	}
 
@@ -95,18 +96,21 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 		SetPost(createdPost).
 		Exec(ctx)
 	if err != nil {
-		println("Error creating post message ID:", err.Error())
+		logger.With("err", err).Error("error creating post message ID")
 		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		println("Error committing transaction:", err.Error())
+		logger.With("err", err).Error("error committing transaction")
 		return err
 	}
 
 	hub.UploadTaskDone <- task
 	hub.PostCreated <- createdPost
+	logger.With("post_id", createdPost.ID).
+		With("task_id", task.ID).
+		Info("created post from upload task")
 
 	return nil
 }
@@ -114,29 +118,34 @@ func processTask(task *ent.UploadTask, ctx context.Context) error {
 func StartUploader(ctx context.Context) {
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	db := ctx.Value("db").(*ent.Client)
-	hub := ctx.Value("hub").(*channels.Hub)
+	hub := ctx.Value("hub").(*utils.Hub)
+	config := ctx.Value("config").(*utils.Config)
 
 	defer wg.Done()
+
+	logger := utils.NewLogger(config.DbName, "uploader")
+	ctx = context.WithValue(ctx, "logger", logger)
+	logger.Info("starting uploader")
 
 	tasks, err := db.UploadTask.Query().
 		Where(uploadtask.IsProcessed(false)).
 		All(ctx)
 	if err != nil {
-		println("Initial upload tasks fetch error:", err.Error())
+		logger.With("err", err).Error("initial upload tasks fetch error")
 		return
 	}
 	for _, task := range tasks {
 		hub.UploadTaskCreated <- task
 	}
+	logger.With("count", len(tasks)).Info("upload tasks remaining")
 
 	for {
 		select {
+		case task := <-hub.UploadTaskCreated:
+			_ = processTask(task, ctx)
+			logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
 		case <-ctx.Done():
 			return
-		case task := <-hub.UploadTaskCreated:
-			if task != nil {
-				_ = processTask(task, ctx)
-			}
 		}
 	}
 }

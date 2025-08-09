@@ -3,22 +3,24 @@ package handlers
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
-	channels "channel-helper-go/modules"
+	"channel-helper-go/utils"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 )
 
 func AnimationHandler(ctx *th.Context, message telego.Message) error {
-	println("AnimationHandler called")
 	db, _ := ctx.Value("db").(*ent.Client)
-	hub, _ := ctx.Value("hub").(*channels.Hub)
+	hub, _ := ctx.Value("hub").(*utils.Hub)
+	logger, _ := ctx.Value("logger").(utils.Logger)
+
+	logger.Info("AnimationHandler called")
 
 	createdPost, err := db.Post.Create().
 		SetType(post.TypeAnimation).
 		SetFileID(message.Animation.FileID).
 		Save(ctx)
 	if err != nil {
-		println("Failed to create post:", err.Error())
+		logger.With("err", err).Error("failed to create post")
 		return err
 	}
 	_ = createPostMessageId(ctx, createdPost, &message)
@@ -26,6 +28,7 @@ func AnimationHandler(ctx *th.Context, message telego.Message) error {
 	reactToMessage(ctx, &message)
 
 	hub.PostCreated <- createdPost
+	logger.With("id", createdPost.ID).Info("created animation post")
 
 	return nil
 }

@@ -1,4 +1,4 @@
-package channels
+package utils
 
 import "channel-helper-go/ent"
 

@@ -2,14 +2,12 @@ package scripts
 
 import (
 	"channel-helper-go/ent"
-	"channel-helper-go/modules"
 	telegrambot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/modules/uploader"
 	webapi "channel-helper-go/modules/web-api"
 	"channel-helper-go/modules/worker"
 	"channel-helper-go/utils"
 	"context"
-	"fmt"
 	"github.com/DrSmithFr/go-console"
 	"github.com/mymmrac/telego"
 	"os"
@@ -23,14 +21,15 @@ func StartScript(cmd *go_console.Script) go_console.ExitCode {
 
 	config, err := utils.ParseConfig(cmd.Input.Option("config"))
 	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to parse config file: %v", err)
-		return go_console.ExitError
+		panic("Failed to parse config file: " + err.Error())
 	}
 	ctx = context.WithValue(ctx, "config", config)
 
+	logger := utils.NewLogger(config.DbName, "root")
+
 	db, err := ent.ConnectToDB(config.DbName, ctx)
 	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to connect to database: %v", err)
+		logger.With("err", err).Error("failed to connect to database")
 		return go_console.ExitError
 	}
 	defer func(db *ent.Client) {
@@ -43,12 +42,12 @@ func StartScript(cmd *go_console.Script) go_console.ExitCode {
 
 	bot, err := telego.NewBot(config.BotToken, telego.WithDefaultLogger(false, true))
 	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to create bot: %v", err)
+		logger.With("err", err).Error("failed to create bot")
 		return go_console.ExitError
 	}
 	ctx = context.WithValue(ctx, "bot", bot)
 
-	hub := channels.NewHub()
+	hub := utils.NewHub()
 	ctx = context.WithValue(ctx, "hub", &hub)
 
 	go telegrambot.StartBot(ctx)

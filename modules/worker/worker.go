@@ -3,7 +3,6 @@ package worker
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
-	channels "channel-helper-go/modules"
 	"channel-helper-go/utils"
 	"context"
 	"entgo.io/ent/dialect/sql"
@@ -16,10 +15,11 @@ import (
 func sendPost(ctx context.Context, postObj *ent.Post) error {
 	bot := ctx.Value("bot").(*telego.Bot)
 	config := ctx.Value("config").(*utils.Config)
-	hub := ctx.Value("hub").(*channels.Hub)
+	hub := ctx.Value("hub").(*utils.Hub)
+	logger := ctx.Value("logger").(utils.Logger)
 	var err error
 
-	println("Sending post:", post.ID)
+	logger.With("id", postObj.ID).Info("sending post")
 
 	switch postObj.Type {
 	case post.TypePhoto:
@@ -46,7 +46,7 @@ func sendPost(ctx context.Context, postObj *ent.Post) error {
 	}
 
 	if err != nil {
-		println("Error sending post:", err.Error())
+		logger.With("err", err).Error("error sending post")
 		return err
 	}
 
@@ -55,13 +55,24 @@ func sendPost(ctx context.Context, postObj *ent.Post) error {
 		SetSentAt(time.Now()).
 		Exec(ctx)
 	if err != nil {
-		println("Error updating post as sent:", err.Error())
+		logger.With("err", err).Error("error updating post as sent")
 		return err
 	}
 
 	hub.PostSent <- postObj
 
+	logger.With("id", postObj.ID).Info("sent post")
+
 	return nil
+}
+
+func unsentPostsCount(ctx context.Context) int {
+	db := ctx.Value("db").(*ent.Client)
+	cnt, _ := db.Post.Query().
+		Where(post.IsSent(false)).
+		Order(sql.OrderByRand()).
+		Count(ctx)
+	return cnt
 }
 
 func StartWorker(ctx context.Context) {
@@ -70,6 +81,12 @@ func StartWorker(ctx context.Context) {
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 
 	defer wg.Done()
+
+	logger := utils.NewLogger(config.DbName, "worker")
+	ctx = context.WithValue(ctx, "logger", logger)
+
+	logger.Info("starting worker")
+	logger.With("count", unsentPostsCount(ctx)).Info("unsent posts remaining")
 
 	ticker := time.NewTimer(config.Interval)
 	for {
@@ -80,12 +97,16 @@ func StartWorker(ctx context.Context) {
 				Order(sql.OrderByRand()).
 				First(ctx)
 			if ent.IsNotFound(err) {
+				logger.With("wait", config.Interval).Info("no unsent posts found")
 				continue
 			} else if err != nil {
-				println("Error fetching posts:", err.Error())
+				logger.With("err", err).Error("error fetching posts")
 				continue
 			}
 			_ = sendPost(ctx, postObj)
+			logger.With("count", unsentPostsCount(ctx)).
+				With("wait", config.Interval).
+				Info("unsent posts")
 
 		case <-ctx.Done():
 			return

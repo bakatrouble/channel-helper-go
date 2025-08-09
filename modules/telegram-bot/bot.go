@@ -2,7 +2,6 @@ package telegram_bot
 
 import (
 	"channel-helper-go/ent"
-	channels "channel-helper-go/modules"
 	"channel-helper-go/modules/telegram-bot/handlers"
 	"channel-helper-go/utils"
 	"context"
@@ -19,7 +18,10 @@ func StartBot(ctx context.Context) {
 	db := ctx.Value("db").(*ent.Client)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	bot := ctx.Value("bot").(*telego.Bot)
-	hub := ctx.Value("hub").(*channels.Hub)
+	hub := ctx.Value("hub").(*utils.Hub)
+
+	logger := utils.NewLogger(config.DbName, "telegram-bot")
+	logger.Info("starting telegram bot")
 
 	defer wg.Done()
 
@@ -34,6 +36,7 @@ func StartBot(ctx context.Context) {
 		ctx = ctx.WithValue("db", db)
 		ctx = ctx.WithValue("wg", wg)
 		ctx = ctx.WithValue("hub", hub)
+		ctx = ctx.WithValue("logger", logger)
 		return ctx.Next(update)
 	})
 	bh.Use(func(ctx *th.Context, update telego.Update) error {
@@ -58,7 +61,7 @@ func StartBot(ctx context.Context) {
 	bh.HandleMessage(handlers.PhotoHandler, messageWithPhoto)
 	bh.HandleMessage(handlers.AnimationHandler, messageWithAnimation)
 	bh.HandleMessage(handlers.VideoHandler, messageWithVideo)
-	bh.HandleMessage(handlers.DeleteHandler, messageCommands([]string{"delete", "del", "remove", "rem", "rm"}))
+	bh.HandleMessage(handlers.DeleteCommandHandler, messageCommands([]string{"delete", "del", "remove", "rem", "rm"}))
 	bh.HandleMessage(handlers.CountHandler, messageCommands([]string{"count", "cnt"}))
 	bh.HandleMessage(handlers.UnknownHandler, th.AnyMessage())
 	bh.HandleCallbackQuery(handlers.DeleteCallbackHandler, th.CallbackDataEqual("/delete"))

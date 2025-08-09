@@ -3,7 +3,7 @@ package handlers
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/uploadtask"
-	channels "channel-helper-go/modules"
+	"channel-helper-go/utils"
 	"encoding/base64"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -21,7 +21,7 @@ type GifHandlerUrlPayload struct {
 
 func GifHandler(c *gin.Context) {
 	db := c.MustGet("db").(*ent.Client)
-	hub := c.MustGet("hub").(*channels.Hub)
+	hub := c.MustGet("hub").(*utils.Hub)
 
 	var gifBytes []byte
 	if fileHeader, err := c.FormFile("upload"); err == nil {

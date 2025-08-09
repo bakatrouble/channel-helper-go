@@ -4,15 +4,18 @@ import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/postmessageid"
-	channels "channel-helper-go/modules"
+	"channel-helper-go/utils"
 	"errors"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-func DeleteHandler(ctx *th.Context, message telego.Message) error {
+func DeleteCommandHandler(ctx *th.Context, message telego.Message) error {
+	logger, _ := ctx.Value("logger").(utils.Logger)
 	bot := ctx.Bot()
+
+	logger.Info("DeleteCommandHandler called")
 
 	replyParameters := &telego.ReplyParameters{
 		MessageID: message.MessageID,
@@ -48,7 +51,10 @@ func DeleteHandler(ctx *th.Context, message telego.Message) error {
 }
 
 func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) error {
+	logger, _ := ctx.Value("logger").(utils.Logger)
 	bot := ctx.Bot()
+
+	logger.Info("DeleteCallbackHandler called")
 
 	if !callbackQuery.Message.IsAccessible() {
 		return nil
@@ -61,7 +67,7 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 		return nil
 	} else if err != nil {
 		err = bot.AnswerCallbackQuery(ctx, tu.CallbackQuery(callbackQuery.ID).
-			WithText("An error occurred"))
+			WithText("An error has occurred"))
 		return err
 	}
 
@@ -70,7 +76,8 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 
 func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 	db := ctx.Value("db").(*ent.Client)
-	hub, _ := ctx.Value("hub").(*channels.Hub)
+	hub, _ := ctx.Value("hub").(*utils.Hub)
+	logger, _ := ctx.Value("logger").(utils.Logger)
 
 	postObj, err := db.Post.Query().
 		Where(post.HasMessageIdsWith(
@@ -82,17 +89,18 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 		if ent.IsNotFound(err) {
 			return errors.New("post not found"), nil
 		}
-		println("Failed to query post:", err.Error())
+		logger.With("err", err).Error("failed to query post")
 		return nil, err
 	}
 
 	err = db.Post.DeleteOne(postObj).Exec(ctx)
 	if err != nil {
-		println("Failed to delete post:", err.Error())
+		logger.With("err", err).Error("failed to delete post")
 		return nil, err
 	}
 
 	hub.PostDeleted <- postObj
+	logger.With("id", postObj.ID).Info("deleted post")
 
 	return nil, nil
 }

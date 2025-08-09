@@ -91,4 +91,6 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 
 	hub.PostCreated <- createdPost
 	logger.With("id", createdPost.ID).Info("created photo post id")
+
+	return nil
 }

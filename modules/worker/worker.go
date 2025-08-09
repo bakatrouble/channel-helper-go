@@ -86,7 +86,7 @@ func StartWorker(ctx context.Context) {
 	ctx = context.WithValue(ctx, "logger", logger)
 
 	logger.Info("starting worker")
-	logger.With("count", unsentPostsCount(ctx)).Info("unsent posts remaining")
+	logger.With("count", unsentPostsCount(ctx)).With("wait", config.Interval).Info("unsent posts remaining")
 
 	ticker := time.NewTimer(config.Interval)
 	for {
@@ -106,7 +106,7 @@ func StartWorker(ctx context.Context) {
 			_ = sendPost(ctx, postObj)
 			logger.With("count", unsentPostsCount(ctx)).
 				With("wait", config.Interval).
-				Info("unsent posts")
+				Info("unsent posts remaining")
 
 		case <-ctx.Done():
 			return

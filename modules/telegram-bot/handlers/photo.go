@@ -4,7 +4,6 @@ import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/utils"
-	"errors"
 	"fmt"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -12,7 +11,7 @@ import (
 	"time"
 )
 
-func PhotoHandler(ctx *th.Context, message telego.Message) error {
+func PhotoHandler(ctx *th.Context, message telego.Message) {
 	db, _ := ctx.Value("db").(*ent.Client)
 	hub, _ := ctx.Value("hub").(*utils.Hub)
 	bot := ctx.Bot()
@@ -23,27 +22,30 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	file, err := bot.GetFile(ctx, &telego.GetFileParams{FileID: message.Photo[len(message.Photo)-1].FileID})
 	if err != nil {
 		logger.With("err", err).Error("error getting photo")
-		return err
+		return
 	}
 	fileData, err := tu.DownloadFile(bot.FileDownloadURL(file.FilePath))
 	if err != nil {
 		logger.With("err", err).Error("error downloading photo")
-		return err
+		return
 	}
 	hash, err := utils.HashImage(fileData)
 	if err != nil {
 		logger.With("err", err).Error("error hashing photo")
-		return err
+		return
 	}
 
 	duplicate, dPost, dUploadTask, err := ent.PhotoHashExists(hash, ctx, db)
 	if err != nil {
 		logger.With("err", err).Error("error checking for duplicate photo hash")
-		return err
+		return
 	}
 	if duplicate {
 		if dPost != nil {
-			newMsg, err := bot.SendPhoto(ctx, tu.Photo(
+			logger.With("hash", hash).With("post_id", dPost.ID).Info("duplicate photo hash found")
+			_ = createPostMessageId(ctx, dPost, &message)
+
+			newMsg, _ := bot.SendPhoto(ctx, tu.Photo(
 				message.Chat.ChatID(),
 				telego.InputFile{
 					FileID: dPost.FileID,
@@ -56,12 +58,12 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 					MessageID: message.MessageID,
 					ChatID:    message.Chat.ChatID(),
 				}))
-			if err != nil {
-				_ = createPostMessageId(ctx, dPost, &message)
+			if newMsg != nil {
 				_ = createPostMessageId(ctx, dPost, newMsg)
 			}
-			return errors.New("duplicate image hash")
+			return
 		} else if dUploadTask != nil {
+			logger.With("hash", hash).With("task_id", dUploadTask.ID).Info("duplicate upload task found")
 			_, _ = bot.SendMessage(ctx, tu.Message(
 				message.Chat.ChatID(),
 				fmt.Sprintf("Duplicate upload task from %s", dUploadTask.CreatedAt.Format(time.RFC3339)),
@@ -70,7 +72,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 					MessageID: message.MessageID,
 					ChatID:    message.Chat.ChatID(),
 				}))
-			return errors.New("duplicate upload task")
+			return
 		}
 	}
 
@@ -81,7 +83,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 		Save(ctx)
 	if err != nil {
 		logger.With("err", err).Error("failed to create post")
-		return err
+		return
 	}
 	_ = createPostMessageId(ctx, createdPost, &message)
 
@@ -89,6 +91,4 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 
 	hub.PostCreated <- createdPost
 	logger.With("id", createdPost.ID).Info("created photo post id")
-
-	return nil
 }

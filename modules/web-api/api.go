@@ -5,6 +5,7 @@ import (
 	"channel-helper-go/modules/web-api/handlers"
 	"channel-helper-go/utils"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
@@ -64,7 +65,7 @@ func StartWebAPI(ctx context.Context) {
 	g.GET("/ws", handlers.WebsocketHandler)
 
 	err := router.RunWithContext(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, context.Canceled) {
 		logger.With("err", err).Error("failed to start web api")
 	}
 }

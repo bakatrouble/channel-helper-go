@@ -14,6 +14,9 @@ import (
 func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 	db := ctx.Value("db").(*ent.Client)
 	config := ctx.Value("config").(*utils.Config)
+	logger := ctx.Value("logger").(utils.Logger)
+
+	logger.Info("creating dump")
 
 	qb := db.Post.Query().
 		WithImageHash().
@@ -21,13 +24,14 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 		Where(post.TypeEQ(post.TypePhoto))
 
 	totalPosts, err := qb.Count(ctx)
-	i := 0
+	offset := 0
 	dump := make([]utils.ImportItem, 0, totalPosts)
-	for i < totalPosts {
+	for offset < totalPosts {
+		logger.With("offset", offset).With("total", totalPosts).Info("fetching posts chunk")
 		postsChunk, err := db.Post.Query().
 			WithImageHash().
 			Where(post.TypeEQ(post.TypePhoto)).
-			Offset(i).
+			Offset(offset).
 			Limit(1000).
 			All(ctx)
 		if err != nil {
@@ -46,6 +50,7 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 			}
 			dump = append(dump, item)
 		}
+		offset += len(postsChunk)
 	}
 	j, err := json.MarshalIndent(dump, "", "  ")
 	if err != nil {

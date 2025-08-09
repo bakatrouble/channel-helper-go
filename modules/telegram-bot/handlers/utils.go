@@ -22,6 +22,8 @@ func createPostMessageId(ctx *th.Context, post *ent.Post, message *telego.Messag
 	db, _ := ctx.Value("db").(*ent.Client)
 	logger, _ := ctx.Value("logger").(utils.Logger)
 
+	logger.With("message_id", message.MessageID).With("chat_id", message.Chat.ID).Info("creating PostMessageId")
+
 	_, err := db.PostMessageId.Create().
 		SetPost(post).
 		SetMessageID(message.MessageID).

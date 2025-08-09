@@ -79,6 +79,8 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 	hub, _ := ctx.Value("hub").(*utils.Hub)
 	logger, _ := ctx.Value("logger").(utils.Logger)
 
+	logger.With("chat_id", message.Chat.ID, "message_id", message.MessageID).Info("deleting post")
+
 	postObj, err := db.Post.Query().
 		Where(post.HasMessageIdsWith(
 			postmessageid.ChatID(message.Chat.ID),

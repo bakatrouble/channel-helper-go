@@ -102,7 +102,7 @@ func PhotoHandler(c *gin.Context) {
 		im = resize.Resize(2000, 2000, im, resize.Lanczos3)
 	}
 	imageBuffer := new(bytes.Buffer)
-	err = jpeg.Encode(imageBuffer, im, &jpeg.Options{Quality: 85})
+	err = jpeg.Encode(imageBuffer, im, &jpeg.Options{Quality: 100})
 	if err != nil {
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to encode image"})
 		logger.With("err", err).Error("failed to encode image")
@@ -116,6 +116,7 @@ func PhotoHandler(c *gin.Context) {
 		logger.With("err", err).Error("failed to hash image")
 		return
 	}
+	logger.With("hash", hash).Info("image hash calculated")
 
 	duplicate, _, _, err := ent.ImageHashExists(hash, c, db, logger)
 	if err != nil {

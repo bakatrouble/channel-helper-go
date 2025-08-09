@@ -21,23 +21,24 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 
 	file, err := bot.GetFile(ctx, &telego.GetFileParams{FileID: message.Photo[len(message.Photo)-1].FileID})
 	if err != nil {
-		logger.With("err", err).Error("error getting photo")
+		logger.With("err", err).Error("error getting image")
 		return nil
 	}
 	fileData, err := tu.DownloadFile(bot.FileDownloadURL(file.FilePath))
 	if err != nil {
-		logger.With("err", err).Error("error downloading photo")
+		logger.With("err", err).Error("error downloading image")
 		return nil
 	}
 	hash, err := utils.HashImage(fileData)
 	if err != nil {
-		logger.With("err", err).Error("error hashing photo")
+		logger.With("err", err).Error("error hashing image")
 		return nil
 	}
+	logger.With("hash", hash).Info("image hash calculated")
 
 	duplicate, dPost, dUploadTask, err := ent.ImageHashExists(hash, ctx, db, logger)
 	if err != nil {
-		logger.With("err", err).Error("error checking for duplicate photo hash")
+		logger.With("err", err).Error("error checking for duplicate image hash")
 		return nil
 	}
 	if duplicate {
@@ -74,7 +75,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 				}))
 			return nil
 		}
-	}
+	} // hash=e63346c7e81e61fc2f1af0dd0d981b6132e4ddcb713422484db19b4eb488
 
 	tx, err := db.Tx(ctx)
 	if err != nil {

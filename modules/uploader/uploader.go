@@ -138,6 +138,7 @@ func StartUploader(ctx context.Context) {
 	}
 
 	tasks, err := db.UploadTask.Query().
+		WithImageHash().
 		Where(uploadtask.IsProcessed(false)).
 		All(ctx)
 	if err != nil {
@@ -152,6 +153,12 @@ func StartUploader(ctx context.Context) {
 	for {
 		select {
 		case task := <-hub.UploadTaskCreated:
+			task, err = db.UploadTask.Query().WithImageHash().Where(uploadtask.IDEQ(task.ID)).Only(ctx)
+			if err != nil {
+				logger.With("task_id", task.ID).With("err", err).
+					Error("processing upload task error")
+				continue
+			}
 			_ = processTask(task, bot, ctx)
 			logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
 		case <-ctx.Done():

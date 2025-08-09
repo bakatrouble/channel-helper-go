@@ -25,13 +25,13 @@ var (
 				Symbol:     "image_hashes_posts_image_hash",
 				Columns:    []*schema.Column{ImageHashesColumns[2]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "image_hashes_upload_tasks_image_hash",
 				Columns:    []*schema.Column{ImageHashesColumns[3]},
 				RefColumns: []*schema.Column{UploadTasksColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -79,7 +79,7 @@ var (
 				Symbol:     "post_message_ids_posts_message_ids",
 				Columns:    []*schema.Column{PostMessageIdsColumns[3]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{

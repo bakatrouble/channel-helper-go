@@ -121,7 +121,9 @@ func StartWorker(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			fetchAndSendPost(bot, ctx)
+			ticker.Reset(config.Interval)
 		case <-ctx.Done():
+			logger.Info("stopping worker")
 			return
 		}
 	}

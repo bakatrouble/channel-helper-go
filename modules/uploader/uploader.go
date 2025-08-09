@@ -27,8 +27,9 @@ func processTask(task *ent.UploadTask, bot *telego.Bot, ctx context.Context) err
 	}
 
 	postBuilder := tx.Post.Create()
-	if task.Edges.ImageHash != nil {
-		postBuilder.SetImageHash(task.Edges.ImageHash)
+	imageHash, err := task.QueryImageHash().First(ctx)
+	if err == nil {
+		postBuilder.SetImageHash(imageHash)
 	}
 	replyMarkup := tu.InlineKeyboard(
 		tu.InlineKeyboardRow(
@@ -85,7 +86,8 @@ func processTask(task *ent.UploadTask, bot *telego.Bot, ctx context.Context) err
 	err = tx.UploadTask.UpdateOne(task).
 		SetSentAt(time.Now()).
 		SetIsProcessed(true).
-		SetData([]byte{}).
+		ClearData().
+		ClearImageHash().
 		Exec(ctx)
 	if err != nil {
 		logger.With("err", err).Error("error updating upload task")

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -29,7 +30,9 @@ func (UploadTask) Fields() []ent.Field {
 // Edges of the UploadTask.
 func (UploadTask) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("image_hash", ImageHash.Type).Unique(),
+		edge.To("image_hash", ImageHash.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)).
+			Unique(),
 	}
 }
 

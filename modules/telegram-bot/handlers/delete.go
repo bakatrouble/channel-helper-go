@@ -73,7 +73,12 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 	_, _ = bot.EditMessageReplyMarkup(ctx, &telego.EditMessageReplyMarkupParams{
 		ChatID:      callbackQuery.Message.GetChat().ChatID(),
 		MessageID:   callbackQuery.Message.GetMessageID(),
-		ReplyMarkup: tu.InlineKeyboard(),
+		ReplyMarkup: tu.InlineKeyboard([]telego.InlineKeyboardButton{}),
+	})
+	_, _ = bot.EditMessageCaption(ctx, &telego.EditMessageCaptionParams{
+		ChatID:    callbackQuery.Message.GetChat().ChatID(),
+		MessageID: callbackQuery.Message.GetMessageID(),
+		Caption:   "deleted",
 	})
 
 	return nil

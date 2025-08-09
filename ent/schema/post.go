@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -29,8 +30,11 @@ func (Post) Fields() []ent.Field {
 // Edges of the Post.
 func (Post) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("message_ids", PostMessageId.Type),
-		edge.To("image_hash", ImageHash.Type).Unique(),
+		edge.To("message_ids", PostMessageId.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("image_hash", ImageHash.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)).
+			Unique(),
 	}
 }
 

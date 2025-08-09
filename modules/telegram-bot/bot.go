@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 )
 
 func StartBot(ctx context.Context) {
@@ -66,7 +67,35 @@ func StartBot(ctx context.Context) {
 	bh.HandleMessage(handlers.UnknownHandler, th.AnyMessage())
 	bh.HandleCallbackQuery(handlers.DeleteCallbackHandler, th.CallbackDataEqual("/delete"))
 
-	_ = bh.Start()
+	// Initialize done chan
+	done := make(chan struct{}, 1)
+
+	// Handle stop signal (Ctrl+C)
+	go func() {
+		<-ctx.Done()
+		logger.Warn("stopping telegram bot")
+		stopCtx, stopCancel := context.WithTimeout(context.Background(), time.Second*20)
+		defer stopCancel()
+
+	out:
+		for len(updates) > 0 {
+			select {
+			case <-stopCtx.Done():
+				break out
+			case <-time.After(time.Millisecond * 100):
+				// Continue
+			}
+		}
+		logger.Info("long polling done")
+		_ = bh.StopWithContext(stopCtx)
+		done <- struct{}{}
+	}()
+
+	go func() { _ = bh.Start() }()
+	logger.Info("handling updates")
+
+	<-done
+	logger.Info("telegram bot stopped")
 }
 
 func messageWithAnimation(_ context.Context, update telego.Update) bool {

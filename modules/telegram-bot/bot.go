@@ -5,6 +5,7 @@ import (
 	"channel-helper-go/modules/telegram-bot/handlers"
 	"channel-helper-go/utils"
 	"context"
+	"fmt"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
@@ -14,17 +15,47 @@ import (
 	"time"
 )
 
+type botLogger struct {
+	utils.Logger
+	replacer *strings.Replacer
+}
+
+func (b *botLogger) Debugf(format string, args ...interface{}) {
+	b.Debug(b.replacer.Replace(fmt.Sprintf(format, args...)))
+}
+
+func (b *botLogger) Errorf(format string, args ...interface{}) {
+	b.Error(b.replacer.Replace(fmt.Sprintf(format, args...)))
+}
+
+func CreateBot(ctx context.Context, logger utils.Logger) (*telego.Bot, error) {
+	config := ctx.Value("config").(*utils.Config)
+
+	l := botLogger{logger, strings.NewReplacer(config.BotToken, "****")}
+
+	bot, err := telego.NewBot(
+		config.BotToken,
+		telego.WithLogger(&l),
+	)
+	return bot, err
+}
+
 func StartBot(ctx context.Context) {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
-	bot := ctx.Value("bot").(*telego.Bot)
 	hub := ctx.Value("hub").(*utils.Hub)
 
 	logger := utils.NewLogger(config.DbName, "telegram-bot")
 	logger.Info("starting telegram bot")
 
 	defer wg.Done()
+
+	bot, err := CreateBot(ctx, logger)
+	if err != nil {
+		logger.With("err", err).Error("failed to create bot")
+		return
+	}
 
 	updates, _ := bot.UpdatesViaLongPolling(ctx, nil)
 	bh, _ := th.NewBotHandler(bot, updates)

@@ -3,6 +3,7 @@ package worker
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
+	telegram_bot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/utils"
 	"context"
 	"entgo.io/ent/dialect/sql"
@@ -12,8 +13,7 @@ import (
 	"time"
 )
 
-func sendPost(ctx context.Context, postObj *ent.Post) error {
-	bot := ctx.Value("bot").(*telego.Bot)
+func sendPost(postObj *ent.Post, bot *telego.Bot, ctx context.Context) error {
 	config := ctx.Value("config").(*utils.Config)
 	hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
@@ -88,6 +88,12 @@ func StartWorker(ctx context.Context) {
 	logger.Info("starting worker")
 	logger.With("count", unsentPostsCount(ctx)).With("wait", config.Interval).Info("unsent posts remaining")
 
+	bot, err := telegram_bot.CreateBot(ctx, logger)
+	if err != nil {
+		logger.With("err", err).Error("failed to create bot")
+		return
+	}
+
 	ticker := time.NewTimer(config.Interval)
 	for {
 		select {
@@ -103,7 +109,7 @@ func StartWorker(ctx context.Context) {
 				logger.With("err", err).Error("error fetching posts")
 				continue
 			}
-			_ = sendPost(ctx, postObj)
+			_ = sendPost(postObj, bot, ctx)
 			logger.With("count", unsentPostsCount(ctx)).
 				With("wait", config.Interval).
 				Info("unsent posts remaining")

@@ -4,6 +4,7 @@ import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
 	"channel-helper-go/ent/uploadtask"
+	telegram_bot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/utils"
 	"context"
 	"errors"
@@ -13,10 +14,9 @@ import (
 	"time"
 )
 
-func processTask(task *ent.UploadTask, ctx context.Context) error {
+func processTask(task *ent.UploadTask, bot *telego.Bot, ctx context.Context) error {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
-	bot := ctx.Value("bot").(*telego.Bot)
 	hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
 
@@ -127,6 +127,12 @@ func StartUploader(ctx context.Context) {
 	ctx = context.WithValue(ctx, "logger", logger)
 	logger.Info("starting uploader")
 
+	bot, err := telegram_bot.CreateBot(ctx, logger)
+	if err != nil {
+		logger.With("err", err).Error("failed to create bot")
+		return
+	}
+
 	tasks, err := db.UploadTask.Query().
 		Where(uploadtask.IsProcessed(false)).
 		All(ctx)
@@ -142,7 +148,7 @@ func StartUploader(ctx context.Context) {
 	for {
 		select {
 		case task := <-hub.UploadTaskCreated:
-			_ = processTask(task, ctx)
+			_ = processTask(task, bot, ctx)
 			logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
 		case <-ctx.Done():
 			return

@@ -9,7 +9,6 @@ import (
 	"channel-helper-go/utils"
 	"context"
 	"github.com/DrSmithFr/go-console"
-	"github.com/mymmrac/telego"
 	"os"
 	"os/signal"
 	"sync"
@@ -39,13 +38,6 @@ func StartScript(cmd *go_console.Script) go_console.ExitCode {
 
 	wg := sync.WaitGroup{}
 	ctx = context.WithValue(ctx, "wg", &wg)
-
-	bot, err := telego.NewBot(config.BotToken, telego.WithDefaultLogger(false, true))
-	if err != nil {
-		logger.With("err", err).Error("failed to create bot")
-		return go_console.ExitError
-	}
-	ctx = context.WithValue(ctx, "bot", bot)
 
 	hub := utils.NewHub()
 	ctx = context.WithValue(ctx, "hub", &hub)

@@ -20,14 +20,6 @@ import (
 	"time"
 )
 
-type ImportItem struct {
-	Type       post.Type `json:"type"`
-	FileId     string    `json:"file_id"`
-	MessageIds []int     `json:"message_ids"`
-	Processed  bool      `json:"processed"`
-	Datetime   time.Time `json:"datetime"`
-}
-
 func ComputeHash(fileId string, directory string, callback func(*string)) {
 	bytes, err := os.ReadFile(path.Join(directory, fmt.Sprintf("%s.jpg", fileId)))
 	if err != nil {
@@ -67,7 +59,7 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 		return go_console.ExitError
 	}
 
-	var items []ImportItem
+	var items []utils.ImportItem
 	err = json.Unmarshal(dump, &items)
 	if err != nil {
 		_, _ = fmt.Fprintf(cmd, "Failed to parse dump file: %v", err)

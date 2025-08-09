@@ -3,7 +3,6 @@ package handlers
 import (
 	"channel-helper-go/ent"
 	"channel-helper-go/ent/post"
-	"channel-helper-go/scripts"
 	"channel-helper-go/utils"
 	"encoding/json"
 	"fmt"
@@ -28,9 +27,9 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 		})
 		return err
 	}
-	dump := make([]scripts.ImportItem, 0, len(posts))
+	dump := make([]utils.ImportItem, 0, len(posts))
 	for _, post := range posts {
-		item := scripts.ImportItem{
+		item := utils.ImportItem{
 			Type:       post.Type,
 			FileId:     post.FileID,
 			MessageIds: make([]int, 0, len(post.Edges.MessageIds)),

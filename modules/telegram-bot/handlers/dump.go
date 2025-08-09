@@ -28,9 +28,7 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 	dump := make([]utils.ImportItem, 0, totalPosts)
 	for offset < totalPosts {
 		logger.With("offset", offset).With("total", totalPosts).Info("fetching posts chunk")
-		postsChunk, err := db.Post.Query().
-			WithImageHash().
-			Where(post.TypeEQ(post.TypePhoto)).
+		postsChunk, err := qb.
 			Offset(offset).
 			Limit(1000).
 			All(ctx)

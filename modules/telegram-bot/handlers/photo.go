@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func PhotoHandler(ctx *th.Context, message telego.Message) {
+func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	db, _ := ctx.Value("db").(*ent.Client)
 	hub, _ := ctx.Value("hub").(*utils.Hub)
 	bot := ctx.Bot()
@@ -22,23 +22,23 @@ func PhotoHandler(ctx *th.Context, message telego.Message) {
 	file, err := bot.GetFile(ctx, &telego.GetFileParams{FileID: message.Photo[len(message.Photo)-1].FileID})
 	if err != nil {
 		logger.With("err", err).Error("error getting photo")
-		return
+		return err
 	}
 	fileData, err := tu.DownloadFile(bot.FileDownloadURL(file.FilePath))
 	if err != nil {
 		logger.With("err", err).Error("error downloading photo")
-		return
+		return err
 	}
 	hash, err := utils.HashImage(fileData)
 	if err != nil {
 		logger.With("err", err).Error("error hashing photo")
-		return
+		return err
 	}
 
 	duplicate, dPost, dUploadTask, err := ent.PhotoHashExists(hash, ctx, db)
 	if err != nil {
 		logger.With("err", err).Error("error checking for duplicate photo hash")
-		return
+		return err
 	}
 	if duplicate {
 		if dPost != nil {
@@ -61,7 +61,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) {
 			if newMsg != nil {
 				_ = createPostMessageId(ctx, dPost, newMsg)
 			}
-			return
+			return err
 		} else if dUploadTask != nil {
 			logger.With("hash", hash).With("task_id", dUploadTask.ID).Info("duplicate upload task found")
 			_, _ = bot.SendMessage(ctx, tu.Message(
@@ -72,7 +72,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) {
 					MessageID: message.MessageID,
 					ChatID:    message.Chat.ChatID(),
 				}))
-			return
+			return err
 		}
 	}
 
@@ -83,7 +83,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) {
 		Save(ctx)
 	if err != nil {
 		logger.With("err", err).Error("failed to create post")
-		return
+		return err
 	}
 	_ = createPostMessageId(ctx, createdPost, &message)
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
+	"log/slog"
 	"path"
 )
 
@@ -26,15 +27,16 @@ func ConnectToDB(dbName string, ctx context.Context) (*Client, error) {
 	return client, nil
 }
 
-func PhotoHashExists(hash string, ctx context.Context, client *Client) (bool, *Post, *UploadTask, error) {
+func ImageHashExists(hash string, ctx context.Context, client *Client, logger *slog.Logger) (bool, *Post, *UploadTask, error) {
 	imageHash, err := client.ImageHash.Query().
 		WithPost().
 		WithUploadTask().
 		Where(imagehash.ImageHashEQ(hash)).
 		First(ctx)
-	if !IsNotFound(err) {
+	if imageHash != nil {
 		return true, imageHash.Edges.Post, imageHash.Edges.UploadTask, nil
-	} else if err != nil {
+	} else if err != nil && !IsNotFound(err) {
+		logger.With("err", err).Error("failed to check image hash existence")
 		return false, nil, nil, err
 	}
 	return false, nil, nil, nil

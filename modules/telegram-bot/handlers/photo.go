@@ -35,7 +35,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 		return nil
 	}
 
-	duplicate, dPost, dUploadTask, err := ent.PhotoHashExists(hash, ctx, db)
+	duplicate, dPost, dUploadTask, err := ent.ImageHashExists(hash, ctx, db, logger)
 	if err != nil {
 		logger.With("err", err).Error("error checking for duplicate photo hash")
 		return nil

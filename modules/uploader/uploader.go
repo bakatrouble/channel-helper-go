@@ -27,6 +27,9 @@ func processTask(task *ent.UploadTask, bot *telego.Bot, ctx context.Context) err
 	}
 
 	postBuilder := tx.Post.Create()
+	if task.Edges.ImageHash != nil {
+		postBuilder.SetImageHash(task.Edges.ImageHash)
+	}
 	replyMarkup := tu.InlineKeyboard(
 		tu.InlineKeyboardRow(
 			tu.InlineKeyboardButton("Delete").
@@ -49,8 +52,7 @@ func processTask(task *ent.UploadTask, bot *telego.Bot, ctx context.Context) err
 
 		createdPost, err = postBuilder.
 			SetType(post.TypePhoto).
-			SetFileID(msg.Animation.FileID).
-			SetImageHash(task.Edges.ImageHash).
+			SetFileID(msg.Photo[len(msg.Photo)-1].FileID).
 			Save(ctx)
 		if err != nil {
 			logger.With("err", err).Error("error creating post")

@@ -70,6 +70,11 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 			WithText("An error has occurred"))
 		return err
 	}
+	_, _ = bot.EditMessageReplyMarkup(ctx, &telego.EditMessageReplyMarkupParams{
+		ChatID:      callbackQuery.Message.GetChat().ChatID(),
+		MessageID:   callbackQuery.Message.GetMessageID(),
+		ReplyMarkup: tu.InlineKeyboard(),
+	})
 
 	return nil
 }

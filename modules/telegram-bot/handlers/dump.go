@@ -30,7 +30,7 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 		logger.With("offset", offset).With("total", totalPosts).Info("fetching posts chunk")
 		postsChunk, err := qb.
 			Offset(offset).
-			Limit(1000).
+			Limit(500).
 			All(ctx)
 		if err != nil {
 			return err

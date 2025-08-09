@@ -63,5 +63,8 @@ func StartWebAPI(ctx context.Context) {
 	g.GET("/hashes", handlers.HashesHandler)
 	g.GET("/ws", handlers.WebsocketHandler)
 
-	_ = router.RunWithContext(ctx)
+	err := router.RunWithContext(ctx)
+	if err != nil {
+		logger.With("err", err).Error("failed to start web api")
+	}
 }

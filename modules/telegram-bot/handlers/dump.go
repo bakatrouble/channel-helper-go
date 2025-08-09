@@ -11,6 +11,13 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
+func getQb(db *ent.Client) *ent.PostQuery {
+	return db.Post.Query().
+		WithImageHash().
+		WithMessageIds().
+		Where(post.TypeEQ(post.TypePhoto))
+}
+
 func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 	db := ctx.Value("db").(*ent.Client)
 	config := ctx.Value("config").(*utils.Config)
@@ -18,17 +25,12 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 
 	logger.Info("creating dump")
 
-	qb := db.Post.Query().
-		WithImageHash().
-		WithMessageIds().
-		Where(post.TypeEQ(post.TypePhoto))
-
-	totalPosts, err := qb.Count(ctx)
+	totalPosts, err := getQb(db).Count(ctx)
 	offset := 0
 	dump := make([]utils.ImportItem, 0, totalPosts)
 	for offset < totalPosts {
 		logger.With("offset", offset).With("total", totalPosts).Info("fetching posts chunk")
-		postsChunk, err := qb.
+		postsChunk, err := getQb(db).
 			Offset(offset).
 			Limit(500).
 			All(ctx)

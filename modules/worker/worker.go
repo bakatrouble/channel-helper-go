@@ -75,8 +75,29 @@ func unsentPostsCount(ctx context.Context) int {
 	return cnt
 }
 
-func StartWorker(ctx context.Context) {
+func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
+	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*ent.Client)
+	logger := ctx.Value("logger").(utils.Logger)
+
+	postObj, err := db.Post.Query().
+		Where(post.IsSent(false)).
+		Order(sql.OrderByRand()).
+		First(ctx)
+	if ent.IsNotFound(err) {
+		logger.With("wait", config.Interval).Info("no unsent posts found")
+		return
+	} else if err != nil {
+		logger.With("err", err).Error("error fetching posts")
+		return
+	}
+	_ = sendPost(postObj, bot, ctx)
+	logger.With("count", unsentPostsCount(ctx)).
+		With("wait", config.Interval).
+		Info("unsent posts remaining")
+}
+
+func StartWorker(ctx context.Context) {
 	config := ctx.Value("config").(*utils.Config)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 
@@ -94,26 +115,12 @@ func StartWorker(ctx context.Context) {
 		return
 	}
 
+	fetchAndSendPost(bot, ctx)
 	ticker := time.NewTimer(config.Interval)
 	for {
 		select {
 		case <-ticker.C:
-			postObj, err := db.Post.Query().
-				Where(post.IsSent(false)).
-				Order(sql.OrderByRand()).
-				First(ctx)
-			if ent.IsNotFound(err) {
-				logger.With("wait", config.Interval).Info("no unsent posts found")
-				continue
-			} else if err != nil {
-				logger.With("err", err).Error("error fetching posts")
-				continue
-			}
-			_ = sendPost(postObj, bot, ctx)
-			logger.With("count", unsentPostsCount(ctx)).
-				With("wait", config.Interval).
-				Info("unsent posts remaining")
-
+			fetchAndSendPost(bot, ctx)
 		case <-ctx.Done():
 			return
 		}

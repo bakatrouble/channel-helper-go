@@ -33,8 +33,8 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 		if unsentCount > config.GroupThreshold {
 			logger.With("count", unsentCount).Info("grouping photos for media group")
 			extraPosts, _ := db.Post.GetAdditionalUnsentByType(ctx, database.MediaTypePhoto)
-			media := make([]telego.InputMedia, len(extraPosts)+1)
-			media = append(media, tu.MediaPhoto(inputFile))
+			media := make([]telego.InputMedia, 1)
+			media[0] = tu.MediaPhoto(inputFile)
 			for _, extraPost := range extraPosts {
 				media = append(media, tu.MediaPhoto(telego.InputFile{FileID: extraPost.FileID}))
 			}

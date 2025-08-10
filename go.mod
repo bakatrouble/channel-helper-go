@@ -24,6 +24,7 @@ require (
 )
 
 require (
+	github.com/gin-contrib/cors v1.7.6
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dialect/sqlitedialect v1.2.15
 	github.com/uptrace/bun/driver/sqliteshim v1.2.15

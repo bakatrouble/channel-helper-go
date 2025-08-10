@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/slog-gin"
@@ -68,6 +69,8 @@ func StartWebAPI(ctx context.Context) {
 		c.Set("logger", logger)
 		c.Next()
 	})
+
+	g.Use(cors.Default())
 
 	g.POST("/photo", handlers.PhotoHandler)
 	g.POST("/gif", handlers.GifHandler)

@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"channel-helper-go/ent"
-	"channel-helper-go/ent/post"
-	"channel-helper-go/ent/postmessageid"
+	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"errors"
 	"github.com/mymmrac/telego"
@@ -85,34 +83,29 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 }
 
 func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
-	db := ctx.Value("db").(*ent.Client)
+	db := ctx.Value("db").(*database.DBStruct)
 	hub, _ := ctx.Value("hub").(*utils.Hub)
 	logger, _ := ctx.Value("logger").(utils.Logger)
 
 	logger.With("chat_id", message.Chat.ID, "message_id", message.MessageID).Info("deleting post")
 
-	postObj, err := db.Post.Query().
-		Where(post.HasMessageIdsWith(
-			postmessageid.ChatID(message.Chat.ID),
-			postmessageid.MessageID(message.MessageID),
-		)).
-		First(ctx)
+	post, err := db.Post.GetByMessageID(ctx, message.Chat.ID, message.MessageID)
 	if err != nil {
-		if ent.IsNotFound(err) {
-			return errors.New("post not found"), nil
-		}
 		logger.With("err", err).Error("failed to query post")
 		return nil, err
 	}
+	if post == nil {
+		return errors.New("post not found"), nil
+	}
 
-	err = db.Post.DeleteOne(postObj).Exec(ctx)
+	err = db.Post.Delete(ctx, post)
 	if err != nil {
 		logger.With("err", err).Error("failed to delete post")
 		return nil, err
 	}
 
-	hub.PostDeleted <- postObj
-	logger.With("id", postObj.ID).Info("deleted post")
+	hub.PostDeleted <- post
+	logger.With("id", post.ID).Info("deleted post")
 
 	return nil, nil
 }

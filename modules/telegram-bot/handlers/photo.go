@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"channel-helper-go/ent"
-	"channel-helper-go/ent/post"
+	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"fmt"
 	"github.com/mymmrac/telego"
@@ -12,7 +11,7 @@ import (
 )
 
 func PhotoHandler(ctx *th.Context, message telego.Message) error {
-	db, _ := ctx.Value("db").(*ent.Client)
+	db, _ := ctx.Value("db").(*database.DBStruct)
 	hub, _ := ctx.Value("hub").(*utils.Hub)
 	bot := ctx.Bot()
 	logger, _ := ctx.Value("logger").(utils.Logger)
@@ -36,7 +35,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	}
 	logger.With("hash", hash).Info("image hash calculated")
 
-	duplicate, dPost, dUploadTask, err := ent.ImageHashExists(hash, ctx, db, logger)
+	duplicate, dPost, dUploadTask, err := db.ImageHash.Exists(ctx, hash)
 	if err != nil {
 		logger.With("err", err).Error("error checking for duplicate image hash")
 		return nil
@@ -44,7 +43,14 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	if duplicate {
 		if dPost != nil {
 			logger.With("hash", hash).With("post_id", dPost.ID).Info("duplicate photo hash found")
-			_ = createPostMessageId(ctx, dPost, &message)
+			dPost.MessageIDs = append(dPost.MessageIDs, database.MessageID{
+				ChatID:    message.Chat.ID,
+				MessageID: message.MessageID,
+			})
+			err = db.Post.Update(ctx, dPost)
+			if err != nil {
+				logger.With("err", err).Error("error updating post with new message ID")
+			}
 
 			newMsg, _ := bot.SendPhoto(ctx, tu.Photo(
 				message.Chat.ChatID(),
@@ -60,7 +66,14 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 					ChatID:    message.Chat.ChatID(),
 				}))
 			if newMsg != nil {
-				_ = createPostMessageId(ctx, dPost, newMsg)
+				dPost.MessageIDs = append(dPost.MessageIDs, database.MessageID{
+					ChatID:    message.Chat.ID,
+					MessageID: message.MessageID,
+				})
+				err = db.Post.Update(ctx, dPost)
+				if err != nil {
+					logger.With("err", err).Error("error updating post with new message ID")
+				}
 			}
 			return nil
 		} else if dUploadTask != nil {
@@ -75,38 +88,26 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 				}))
 			return nil
 		}
-	} // hash=e63346c7e81e61fc2f1af0dd0d981b6132e4ddcb713422484db19b4eb488
+	}
 
-	tx, err := db.Tx(ctx)
-	if err != nil {
-		logger.With("err", err).Error("failed to start transaction")
-		return nil
+	post := &database.Post{
+		Type:   database.MediaTypePhoto,
+		FileID: message.Photo[len(message.Photo)-1].FileID,
+		MessageIDs: []database.MessageID{
+			{
+				ChatID:    message.Chat.ID,
+				MessageID: message.MessageID,
+			},
+		},
+		ImageHash: &database.ImageHash{
+			Hash: hash,
+		},
 	}
-	createdPost, err := tx.Post.Create().
-		SetType(post.TypePhoto).
-		SetFileID(message.Photo[len(message.Photo)-1].FileID).
-		Save(ctx)
-	if err != nil {
-		logger.With("err", err).Error("failed to create post")
-		return nil
-	}
-	err = tx.ImageHash.Create().
-		SetPost(createdPost).
-		SetImageHash(hash).
-		Exec(ctx)
-	if err != nil {
-		logger.With("err", err).Error("failed to create image hash")
-		return nil
-	}
-	if err := tx.Commit(); err != nil {
-		logger.With("err", err).Error("failed to commit transaction")
-	}
-	_ = createPostMessageId(ctx, createdPost, &message)
-
+	err = db.Post.Create(ctx, post)
 	reactToMessage(ctx, &message)
 
-	hub.PostCreated <- createdPost
-	logger.With("id", createdPost.ID).Info("created photo post id")
+	hub.PostCreated <- post
+	logger.With("id", post.ID).Info("created photo post id")
 
 	return nil
 }

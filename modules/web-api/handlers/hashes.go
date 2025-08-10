@@ -1,19 +1,16 @@
 package handlers
 
 import (
-	"channel-helper-go/ent"
-	"channel-helper-go/ent/imagehash"
+	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"github.com/gin-gonic/gin"
 )
 
 func HashesHandler(c *gin.Context) {
-	db := c.MustGet("db").(*ent.Client)
+	db := c.MustGet("db").(*database.DBStruct)
 	logger := c.MustGet("logger").(utils.Logger)
 
-	hashes, err := db.ImageHash.Query().
-		Select(imagehash.FieldImageHash).
-		Strings(c)
+	hashes, err := db.ImageHash.GetAll(c)
 	if err != nil {
 		logger.With("err", err).Error("failed to get hashes")
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to retrieve hashes"})
@@ -27,7 +24,7 @@ func HashesHandler(c *gin.Context) {
 }
 
 func HashExistsHandler(c *gin.Context) {
-	db := c.MustGet("db").(*ent.Client)
+	db := c.MustGet("db").(*database.DBStruct)
 	logger := c.MustGet("logger").(utils.Logger)
 
 	hash := c.Param("hash")
@@ -36,9 +33,7 @@ func HashExistsHandler(c *gin.Context) {
 		return
 	}
 
-	exists, err := db.ImageHash.Query().
-		Where(imagehash.ImageHashEQ(hash)).
-		Exist(c)
+	exists, _, _, err := db.ImageHash.Exists(c, hash)
 	if err != nil {
 		logger.With("err", err).Error("failed to check if hash exists")
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to check hash existence"})

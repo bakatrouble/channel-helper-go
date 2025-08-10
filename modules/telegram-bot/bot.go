@@ -1,10 +1,11 @@
 package telegram_bot
 
 import (
-	"channel-helper-go/ent"
+	"channel-helper-go/database"
 	"channel-helper-go/modules/telegram-bot/handlers"
 	"channel-helper-go/utils"
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -42,12 +43,21 @@ func CreateBot(ctx context.Context, logger utils.Logger) (*telego.Bot, error) {
 
 func StartBot(ctx context.Context) {
 	config := ctx.Value("config").(*utils.Config)
-	db := ctx.Value("db").(*ent.Client)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
+	sqldb := ctx.Value("sqldb").(*sql.DB)
 	hub := ctx.Value("hub").(*utils.Hub)
 
 	logger := utils.NewLogger(config.DbName, "telegram-bot")
 	logger.Info("starting telegram bot")
+
+	db, err := database.NewDBStruct(sqldb, !config.Production, logger)
+	if err != nil {
+		logger.With("err", err).Error("failed to connect to database")
+		panic(err)
+	}
+	defer func(db *database.DBStruct) {
+		_ = db.Close()
+	}(db)
 
 	defer wg.Done()
 

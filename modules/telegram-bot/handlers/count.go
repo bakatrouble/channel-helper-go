@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"channel-helper-go/ent"
-	"channel-helper-go/ent/post"
+	"channel-helper-go/database"
 	"fmt"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -10,11 +9,9 @@ import (
 )
 
 func CountHandler(ctx *th.Context, message telego.Message) error {
-	db := ctx.Value("db").(*ent.Client)
+	db := ctx.Value("db").(*database.DBStruct)
 
-	count, err := db.Post.Query().
-		Where(post.IsSent(false)).
-		Count(ctx)
+	count, err := db.Post.UnsentCount(ctx)
 	if err != nil {
 		println("Failed to count posts:", err.Error())
 		_, _ = ctx.Bot().SendMessage(ctx, tu.Message(

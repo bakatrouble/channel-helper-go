@@ -1,15 +1,14 @@
 package scripts
 
 import (
-	"channel-helper-go/ent"
-	"channel-helper-go/ent/post"
+	"channel-helper-go/database"
+	"channel-helper-go/database/database_utils"
 	"channel-helper-go/utils"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/DrSmithFr/go-console"
 	"github.com/alitto/pond/v2"
-	"github.com/moroz/uuidv7-go"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 	"os"
@@ -41,41 +40,43 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 
 	config, err := utils.ParseConfig(cmd.Input.Option("config"))
 	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to parse config file: %v", err)
+		fmt.Printf("Failed to parse config file: %v\n", err)
 		return go_console.ExitError
 	}
 
 	imageDirectory, _ := filepath.Abs(cmd.Input.Argument("directory"))
 
-	db, err := ent.ConnectToDB(config.DbName, ctx)
+	logger := utils.NewLogger(config.DbName, "import")
+	sqldb, err := database.NewSQLDB(config.DbName)
 	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to connect to database: %v", err)
+		fmt.Printf("Failed to connect to database: %v\n", err)
 		return go_console.ExitError
 	}
+	db, err := database.NewDBStruct(sqldb, true, logger)
+	if err != nil {
+		fmt.Printf("Failed to create database struct: %v\n", err)
+		return go_console.ExitError
+	}
+	defer func(db *database.DBStruct) {
+		_ = db.Close()
+	}(db)
 
 	dump, err := os.ReadFile(cmd.Input.Argument("dump"))
 	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to read dump file: %v", err)
+		fmt.Printf("Failed to read dump file: %v\n", err)
 		return go_console.ExitError
 	}
 
 	var items []utils.ImportItem
-	err = json.Unmarshal(dump, &items)
-	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to parse dump file: %v", err)
+	if err = json.Unmarshal(dump, &items); err != nil {
+		fmt.Printf("Failed to parse dump file: %v\n", err)
 		return go_console.ExitError
 	}
 
-	fileIds, err := db.Post.Query().
-		Select(post.FieldFileID).
-		Strings(ctx)
+	existingFileIds, err := db.Post.GetFileIDs(ctx)
 	if err != nil {
-		_, _ = fmt.Fprintf(cmd, "Failed to query existing file IDs: %v", err)
+		fmt.Printf("Failed to query existing file IDs: %v\n", err)
 		return go_console.ExitError
-	}
-	existingFileIds := make(map[string]bool, len(fileIds))
-	for _, fileId := range fileIds {
-		existingFileIds[fileId] = true
 	}
 
 	p := mpb.New(
@@ -103,79 +104,71 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 		),
 	)
 
-	var posts []*ent.PostCreate
-	var postMessageIds []*ent.PostMessageIdCreate
-	var imageHashes []*ent.ImageHashCreate
+	var posts []*database.Post
 	var hashTotal int64
 	pool := pond.NewPool(runtime.NumCPU())
+	now := time.Now().UTC()
 	for _, item := range items {
 		importBar.Increment()
-		if existingFileIds[item.FileId] {
+		if existingFileIds[item.FileID] {
 			continue
 		}
 
-		postId := uuidv7.Generate()
+		postId := database_utils.GenerateID()
 
-		createdPost := db.Post.Create().
-			SetID(postId).
-			SetType(item.Type).
-			SetFileID(item.FileId).
-			SetIsSent(item.Processed).
-			SetCreatedAt(item.Datetime)
-		if item.Processed {
-			createdPost = createdPost.SetSentAt(time.Now().UTC())
+		post := database.Post{
+			ID:        postId,
+			Type:      item.Type,
+			FileID:    item.FileID,
+			IsSent:    item.Processed,
+			CreatedAt: item.Datetime,
 		}
-		posts = append(posts, createdPost)
-		if item.Type == post.TypePhoto {
-			hashTotal += 1
-			hashBar.SetTotal(hashTotal, false)
-			closurePostId := postId
-			pool.Submit(func() {
-				ComputeHash(item.FileId, imageDirectory, func(hash *string) {
-					hashBar.Increment()
-					imageHashes = append(imageHashes,
-						db.ImageHash.Create().
-							SetImageHash(*hash).
-							SetPostID(closurePostId),
-					)
-				})
-			})
+		if item.Processed {
+			post.SentAt = &now
 		}
 		for _, messageId := range item.MessageIds {
-			postMessageIds = append(
-				postMessageIds,
-				db.PostMessageId.Create().
-					SetChatID(config.AllowedSenderChats[0]).
-					SetMessageID(messageId).
-					SetPostID(postId),
-			)
+			post.MessageIDs = append(post.MessageIDs, database.MessageID{
+				ChatID:    config.AllowedSenderChats[0],
+				MessageID: messageId,
+			})
+		}
+		posts = append(posts, &post)
+		if item.Type == database.MediaTypePhoto {
+			hashTotal += 1
+			hashBar.SetTotal(hashTotal, false)
+			closurePost := posts[len(posts)-1]
+			pool.Submit(func() {
+				ComputeHash(item.FileID, imageDirectory, func(hash *string) {
+					hashBar.Increment()
+					closurePost.ImageHash = &database.ImageHash{
+						Hash: *hash,
+					}
+				})
+			})
 		}
 	}
 	pool.StopAndWait()
 	hashBar.SetTotal(hashTotal, true)
 	hashBar.Wait()
 
-	_, _ = fmt.Fprintf(cmd, "Inserting into database...\n")
-	for chunk := range slices.Chunk(posts, 1000) {
-		err = db.Post.CreateBulk(chunk...).Exec(ctx)
-		if err != nil {
-			_, _ = fmt.Fprintf(cmd, "Failed to insert posts: %v\n", err)
-			return go_console.ExitError
+	existingImageHashesMap := make(map[string]bool, len(posts))
+	filteredPosts := slices.Collect(func(yield func(post *database.Post) bool) {
+		for _, post := range posts {
+			if post.ImageHash != nil {
+				if !existingImageHashesMap[post.ImageHash.Hash] {
+					yield(post)
+					existingImageHashesMap[post.ImageHash.Hash] = true
+				} else {
+					fmt.Printf("Duplicate image hash found: %s\n", post.ImageHash.Hash)
+				}
+			}
 		}
-	}
-	for chunk := range slices.Chunk(postMessageIds, 1000) {
-		err = db.PostMessageId.CreateBulk(chunk...).Exec(ctx)
-		if err != nil {
-			_, _ = fmt.Fprintf(cmd, "Failed to insert post message IDs: %v\n", err)
-			return go_console.ExitError
-		}
-	}
-	for chunk := range slices.Chunk(imageHashes, 1000) {
-		err = db.ImageHash.CreateBulk(chunk...).Exec(ctx)
-		if err != nil {
-			_, _ = fmt.Fprintf(cmd, "Failed to insert image hash %v\n", err)
-			return go_console.ExitError
-		}
+	})
+
+	_, _ = p.Write([]byte("Inserting into database..."))
+	if err = db.Post.CreateBulk(ctx, filteredPosts, 1000); err != nil {
+		fmt.Printf("Failed to insert posts into database: %v", err)
+		return go_console.ExitError
 	}
 
 	return go_console.ExitSuccess

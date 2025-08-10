@@ -1,7 +1,7 @@
 package scripts
 
 import (
-	"channel-helper-go/ent"
+	"channel-helper-go/database"
 	telegrambot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/modules/uploader"
 	webapi "channel-helper-go/modules/web-api"
@@ -24,23 +24,17 @@ func StartScript(cmd *go_console.Script) go_console.ExitCode {
 	}
 	ctx = context.WithValue(ctx, "config", config)
 
-	logger := utils.NewLogger(config.DbName, "root")
-
-	db, err := ent.ConnectToDB(config.DbName, ctx)
-	if err != nil {
-		logger.With("err", err).Error("failed to connect to database")
-		return go_console.ExitError
-	}
-	defer func(db *ent.Client) {
-		_ = db.Close()
-	}(db)
-	ctx = context.WithValue(ctx, "db", db)
-
 	wg := sync.WaitGroup{}
 	ctx = context.WithValue(ctx, "wg", &wg)
 
 	hub := utils.NewHub()
 	ctx = context.WithValue(ctx, "hub", &hub)
+
+	sqldb, err := database.NewSQLDB(config.DbName)
+	if err != nil {
+		panic("Failed to connect to database: " + err.Error())
+	}
+	ctx = context.WithValue(ctx, "sqldb", sqldb)
 
 	go telegrambot.StartBot(ctx)
 	wg.Add(1)

@@ -1,21 +1,23 @@
 package utils
 
-import "channel-helper-go/ent"
+import (
+	"channel-helper-go/database"
+)
 
 type Hub struct {
-	PostCreated       chan *ent.Post
-	PostSent          chan *ent.Post
-	PostDeleted       chan *ent.Post
-	UploadTaskCreated chan *ent.UploadTask
-	UploadTaskDone    chan *ent.UploadTask
+	PostCreated       chan *database.Post
+	PostSent          chan *database.Post
+	PostDeleted       chan *database.Post
+	UploadTaskCreated chan *database.UploadTask
+	UploadTaskDone    chan *database.UploadTask
 }
 
 func NewHub() Hub {
 	return Hub{
-		PostCreated:       make(chan *ent.Post, 100),
-		PostSent:          make(chan *ent.Post, 100),
-		PostDeleted:       make(chan *ent.Post, 100),
-		UploadTaskCreated: make(chan *ent.UploadTask, 100),
-		UploadTaskDone:    make(chan *ent.UploadTask, 100),
+		PostCreated:       make(chan *database.Post, 100),
+		PostSent:          make(chan *database.Post, 100),
+		PostDeleted:       make(chan *database.Post, 100),
+		UploadTaskCreated: make(chan *database.UploadTask, 100),
+		UploadTaskDone:    make(chan *database.UploadTask, 100),
 	}
 }

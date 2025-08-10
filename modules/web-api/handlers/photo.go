@@ -2,8 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"channel-helper-go/ent"
-	"channel-helper-go/ent/uploadtask"
+	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"encoding/base64"
 	"github.com/gin-gonic/gin"
@@ -28,19 +27,19 @@ type PhotoHandlerUrlPayload struct {
 }
 
 func PhotoHandler(c *gin.Context) {
-	db := c.Value("db").(*ent.Client)
+	db := c.Value("db").(*database.DBStruct)
 	hub := c.MustGet("hub").(*utils.Hub)
 	logger := c.MustGet("logger").(utils.Logger)
 
 	var imageBytes []byte
+	var err error
 	if fileHeader, err := c.FormFile("upload"); err == nil {
 		file, _ := fileHeader.Open()
 		defer func(file multipart.File) {
 			_ = file.Close()
 		}(file)
 		imageBytes = make([]byte, fileHeader.Size)
-		_, err := file.Read(imageBytes)
-		if err != nil {
+		if _, err = file.Read(imageBytes); err != nil {
 			c.JSON(500, gin.H{"status": "error", "message": "Failed to read file"})
 			logger.With("err", err).Error("failed to read file")
 			return
@@ -73,8 +72,8 @@ func PhotoHandler(c *gin.Context) {
 				_ = Body.Close()
 			}(resp.Body)
 			imageBytes = make([]byte, resp.ContentLength)
-			_, err = resp.Body.Read(imageBytes)
-			if err != nil && err != io.EOF {
+
+			if _, err = resp.Body.Read(imageBytes); err != nil && err != io.EOF {
 				c.JSON(500, gin.H{"status": "error", "message": "Failed to read image from URL"})
 				logger.With("err", err).With("url", payloadUrl.Url).Error("failed to read image from url")
 				return
@@ -102,8 +101,7 @@ func PhotoHandler(c *gin.Context) {
 		im = resize.Resize(2000, 2000, im, resize.Lanczos3)
 	}
 	imageBuffer := new(bytes.Buffer)
-	err = jpeg.Encode(imageBuffer, im, &jpeg.Options{Quality: 100})
-	if err != nil {
+	if err = jpeg.Encode(imageBuffer, im, &jpeg.Options{Quality: 100}); err != nil {
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to encode image"})
 		logger.With("err", err).Error("failed to encode image")
 		return
@@ -118,7 +116,7 @@ func PhotoHandler(c *gin.Context) {
 	}
 	logger.With("hash", hash).Info("image hash calculated")
 
-	duplicate, _, _, err := ent.ImageHashExists(hash, c, db, logger)
+	duplicate, _, _, err := db.ImageHash.Exists(c, hash)
 	if err != nil {
 		c.JSON(500, gin.H{"status": "error", "message": "Database error"})
 		logger.With("err", err).Error("error checking for duplicate photo hash")
@@ -130,37 +128,20 @@ func PhotoHandler(c *gin.Context) {
 		return
 	}
 
-	tx, err := db.Tx(c)
-	if err != nil {
-		c.JSON(500, gin.H{"status": "error", "message": "Failed to start transaction"})
-		logger.With("err", err).Error("failed to start transaction")
-		return
+	task := &database.UploadTask{
+		Type: database.MediaTypePhoto,
+		Data: &imageBytes,
+		ImageHash: &database.ImageHash{
+			Hash: hash,
+		},
 	}
-	uploadTask, err := tx.UploadTask.Create().
-		SetType(uploadtask.TypePhoto).
-		SetData(imageBytes).
-		Save(c)
-	if err != nil {
+	if err = db.UploadTask.Create(c, task); err != nil {
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to create upload task"})
 		logger.With("err", err).Error("failed to create upload task")
 		return
 	}
-	err = tx.ImageHash.Create().
-		SetImageHash(hash).
-		SetUploadTask(uploadTask).
-		Exec(c)
-	if err != nil {
-		c.JSON(500, gin.H{"status": "error", "message": "Failed to create image hash"})
-		logger.With("err", err).Error("failed to create image hash")
-		return
-	}
-	if err = tx.Commit(); err != nil {
-		c.JSON(500, gin.H{"status": "error", "message": "Failed to commit transaction"})
-		logger.With("err", err).Error("failed to commit transaction")
-		return
-	}
 
-	hub.UploadTaskCreated <- uploadTask
+	hub.UploadTaskCreated <- task
 
-	c.JSON(200, gin.H{"status": "ok", "hash": hash, "upload_id": uploadTask.ID})
+	c.JSON(200, gin.H{"status": "ok", "hash": hash, "upload_id": task.ID})
 }

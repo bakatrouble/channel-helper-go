@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"channel-helper-go/ent"
-	"channel-helper-go/ent/uploadtask"
+	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"encoding/base64"
 	"github.com/gin-gonic/gin"
@@ -20,7 +19,7 @@ type GifHandlerUrlPayload struct {
 }
 
 func GifHandler(c *gin.Context) {
-	db := c.MustGet("db").(*ent.Client)
+	db := c.MustGet("db").(*database.DBStruct)
 	hub := c.MustGet("hub").(*utils.Hub)
 
 	var gifBytes []byte
@@ -71,16 +70,17 @@ func GifHandler(c *gin.Context) {
 		}
 	}
 
-	uploadTask, err := db.UploadTask.Create().
-		SetType(uploadtask.TypeAnimation).
-		SetData(gifBytes).
-		Save(c)
+	task := &database.UploadTask{
+		Type: database.MediaTypeAnimation,
+		Data: &gifBytes,
+	}
+	err := db.UploadTask.Create(c, task)
 	if err != nil {
 		c.JSON(500, gin.H{"status": "error", "message": "Failed to create upload task"})
 		return
 	}
 
-	hub.UploadTaskCreated <- uploadTask
+	hub.UploadTaskCreated <- task
 
-	c.JSON(200, gin.H{"status": "ok", "upload_id": uploadTask.ID})
+	c.JSON(200, gin.H{"status": "ok", "upload_id": task.ID})
 }

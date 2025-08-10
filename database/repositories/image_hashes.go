@@ -39,7 +39,7 @@ func (r *ImageHashRepository) GetAll(ctx context.Context) ([]string, error) {
 	if err := r.db.NewSelect().
 		Model(&schema.ImageHash{}).
 		Column("hash").
-		Scan(ctx, imageHashes); err != nil {
+		Scan(ctx, &imageHashes); err != nil {
 		return nil, err
 	}
 	return imageHashes, nil

@@ -38,7 +38,7 @@ func (r *UploadTaskRepository) Create(ctx context.Context, task *schema.UploadTa
 		task.ImageHashID = &task.ImageHash.ID
 	}
 
-	if _, err = r.db.NewInsert().Model(task).Exec(ctx); err != nil {
+	if _, err = tx.NewInsert().Model(task).Exec(ctx); err != nil {
 		return rollbackIfError(err, tx)
 	}
 

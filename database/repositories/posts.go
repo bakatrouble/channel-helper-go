@@ -230,7 +230,7 @@ func (r *PostRepository) GetAdditionalUnsentByType(ctx context.Context, mediaTyp
 		Relation("MessageIDs").
 		Relation("ImageHash").
 		Where("is_sent = ?", false).
-		Where("media_type = ?", mediaType).
+		Where("type = ?", mediaType).
 		OrderExpr("random()").
 		Limit(9).
 		Scan(ctx); err != nil {

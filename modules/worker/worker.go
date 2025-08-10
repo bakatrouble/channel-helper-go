@@ -22,6 +22,9 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 
 	logger.With("id", post.ID).Info("sending post")
 
+	processedPosts := make([]*database.Post, 1)
+	processedPosts[0] = post
+
 	chatId := telego.ChatID{ID: config.TargetChatId}
 	inputFile := telego.InputFile{FileID: post.FileID}
 	switch post.Type {
@@ -40,6 +43,9 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 					chatId,
 					media...,
 				))
+				for _, extraPost := range extraPosts {
+					processedPosts = append(processedPosts, extraPost)
+				}
 				break
 			}
 		}
@@ -55,12 +61,14 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 		return err
 	}
 
-	post.IsSent = true
-	post.SentAt = database_utils.Now()
-	err = db.Post.Update(ctx, post)
-	if err != nil {
-		logger.With("err", err).Error("error updating post as sent")
-		return err
+	for _, p := range processedPosts {
+		p.IsSent = true
+		p.SentAt = database_utils.Now()
+		err = db.Post.Update(ctx, p)
+		if err != nil {
+			logger.With("err", err).Error("error updating post as sent")
+			return err
+		}
 	}
 
 	hub.PostSent <- post

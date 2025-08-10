@@ -223,6 +223,22 @@ func (r *PostRepository) GetRandomUnsent(ctx context.Context) (*schema.Post, err
 	return &post, nil
 }
 
+func (r *PostRepository) GetAdditionalUnsentByType(ctx context.Context, mediaType schema.MediaType) ([]*schema.Post, error) {
+	var posts []*schema.Post
+	if err := r.db.NewSelect().
+		Model(&posts).
+		Relation("MessageIDs").
+		Relation("ImageHash").
+		Where("is_sent = ?", false).
+		Where("media_type = ?", mediaType).
+		OrderExpr("random()").
+		Limit(9).
+		Scan(ctx); err != nil {
+		return nil, err
+	}
+	return posts, nil
+}
+
 func (r *PostRepository) GetFileIDs(ctx context.Context) (map[string]bool, error) {
 	fileIds := make([]string, 0)
 	if err := r.db.NewSelect().

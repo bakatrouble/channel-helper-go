@@ -22,28 +22,32 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 
 	logger.With("id", post.ID).Info("sending post")
 
+	chatId := telego.ChatID{ID: config.TargetChatId}
+	inputFile := telego.InputFile{FileID: post.FileID}
 	switch post.Type {
 	case database.MediaTypePhoto:
-		_, err = bot.SendPhoto(ctx, tu.Photo(
-			telego.ChatID{ID: config.TargetChatId},
-			telego.InputFile{
-				FileID: post.FileID,
-			},
-		))
+		unsentCount := unsentPostsCount(ctx)
+		if unsentCount > config.GroupThreshold {
+			logger.With("count", unsentCount).Info("grouping photos for media group")
+			extraPosts, _ := db.Post.GetAdditionalUnsentByType(ctx, database.MediaTypePhoto)
+			media := make([]telego.InputMedia, len(extraPosts)+1)
+			media = append(media, tu.MediaPhoto(inputFile))
+			for _, extraPost := range extraPosts {
+				media = append(media, tu.MediaPhoto(telego.InputFile{FileID: extraPost.FileID}))
+			}
+			if len(media) > 1 {
+				_, err = bot.SendMediaGroup(ctx, tu.MediaGroup(
+					chatId,
+					media...,
+				))
+				break
+			}
+		}
+		_, err = bot.SendPhoto(ctx, tu.Photo(chatId, inputFile))
 	case database.MediaTypeVideo:
-		_, err = bot.SendVideo(ctx, tu.Video(
-			telego.ChatID{ID: config.TargetChatId},
-			telego.InputFile{
-				FileID: post.FileID,
-			},
-		))
+		_, err = bot.SendVideo(ctx, tu.Video(chatId, inputFile))
 	case database.MediaTypeAnimation:
-		_, err = bot.SendAnimation(ctx, tu.Animation(
-			telego.ChatID{ID: config.TargetChatId},
-			telego.InputFile{
-				FileID: post.FileID,
-			},
-		))
+		_, err = bot.SendAnimation(ctx, tu.Animation(chatId, inputFile))
 	}
 
 	if err != nil {
@@ -77,16 +81,16 @@ func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
 	db := ctx.Value("db").(*database.DBStruct)
 	logger := ctx.Value("logger").(utils.Logger)
 
-	postObj, err := db.Post.GetRandomUnsent(ctx)
+	post, err := db.Post.GetRandomUnsent(ctx)
 	if err != nil {
 		logger.With("err", err).Error("error fetching posts")
 		return
 	}
-	if postObj == nil {
+	if post == nil {
 		logger.With("wait", config.Interval).Info("no unsent posts found")
 		return
 	}
-	_ = sendPost(postObj, bot, ctx)
+	_ = sendPost(post, bot, ctx)
 	logger.With("count", unsentPostsCount(ctx)).
 		With("wait", config.Interval).
 		Info("unsent posts remaining")

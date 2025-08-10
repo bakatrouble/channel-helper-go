@@ -62,7 +62,7 @@ func processTask(task *database.UploadTask, bot *telego.Bot, ctx context.Context
 		return errors.New("unsupported upload task type")
 	}
 
-	post.MessageIDs = []database.MessageID{
+	post.MessageIDs = []*database.MessageID{
 		{
 			ChatID:    msg.Chat.ID,
 			MessageID: msg.MessageID,

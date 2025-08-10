@@ -51,7 +51,7 @@ func (r *PostRepository) CreateBulk(ctx context.Context, posts []*schema.Post, c
 			for _, messageID := range post.MessageIDs {
 				if messageID.PostID == "" {
 					messageID.PostID = post.ID
-					if _, err = tx.NewInsert().Model(&messageID).Exec(ctx); err != nil {
+					if _, err = tx.NewInsert().Model(messageID).Exec(ctx); err != nil {
 						return rollbackIfError(err, tx)
 					}
 				}
@@ -89,7 +89,7 @@ func (r *PostRepository) Create(ctx context.Context, post *schema.Post) error {
 	for _, messageID := range post.MessageIDs {
 		if messageID.PostID == "" {
 			messageID.PostID = post.ID
-			if _, err = tx.NewInsert().Model(&messageID).Exec(ctx); err != nil {
+			if _, err = tx.NewInsert().Model(messageID).Exec(ctx); err != nil {
 				return rollbackIfError(err, tx)
 			}
 		}
@@ -119,7 +119,7 @@ func (r *PostRepository) Update(ctx context.Context, post *schema.Post) error {
 	for _, messageID := range post.MessageIDs {
 		if messageID.PostID == "" {
 			messageID.PostID = post.ID
-			if _, err = tx.NewInsert().Model(&messageID).Exec(ctx); err != nil {
+			if _, err = tx.NewInsert().Model(messageID).Exec(ctx); err != nil {
 				return rollbackIfError(err, tx)
 			}
 		}
@@ -138,12 +138,11 @@ func (r *PostRepository) Update(ctx context.Context, post *schema.Post) error {
 }
 
 func (r *PostRepository) UnsentCount(ctx context.Context) (int, error) {
-	var count int
-
-	if _, err := r.db.NewSelect().
+	count, err := r.db.NewSelect().
 		Model((*schema.Post)(nil)).
 		Where("is_sent = ?", false).
-		Count(ctx); err != nil {
+		Count(ctx)
+	if err != nil {
 		return 0, err
 	}
 

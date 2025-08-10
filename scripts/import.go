@@ -127,7 +127,7 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 			post.SentAt = &now
 		}
 		for _, messageId := range item.MessageIds {
-			post.MessageIDs = append(post.MessageIDs, database.MessageID{
+			post.MessageIDs = append(post.MessageIDs, &database.MessageID{
 				ChatID:    config.AllowedSenderChats[0],
 				MessageID: messageId,
 			})

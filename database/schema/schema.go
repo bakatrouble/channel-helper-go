@@ -32,8 +32,8 @@ type Post struct {
 	CreatedAt     time.Time `bun:",default:current_timestamp"`
 	SentAt        *time.Time
 	ImageHashID   *int64
-	ImageHash     *ImageHash  `bun:"rel:belongs-to,join:image_hash_id=id"`
-	MessageIDs    []MessageID `bun:"rel:has-many,join:id=post_id"`
+	ImageHash     *ImageHash   `bun:"rel:belongs-to,join:image_hash_id=id"`
+	MessageIDs    []*MessageID `bun:"rel:has-many,join:id=post_id"`
 }
 
 type UploadTask struct {

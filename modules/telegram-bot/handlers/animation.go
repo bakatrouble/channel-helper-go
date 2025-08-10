@@ -17,7 +17,7 @@ func AnimationHandler(ctx *th.Context, message telego.Message) error {
 	post := &database.Post{
 		Type:   database.MediaTypeAnimation,
 		FileID: message.Animation.FileID,
-		MessageIDs: []database.MessageID{
+		MessageIDs: []*database.MessageID{
 			{
 				ChatID:    message.Chat.ID,
 				MessageID: message.MessageID,

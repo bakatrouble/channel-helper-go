@@ -43,7 +43,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	if duplicate {
 		if dPost != nil {
 			logger.With("hash", hash).With("post_id", dPost.ID).Info("duplicate photo hash found")
-			dPost.MessageIDs = append(dPost.MessageIDs, database.MessageID{
+			dPost.MessageIDs = append(dPost.MessageIDs, &database.MessageID{
 				ChatID:    message.Chat.ID,
 				MessageID: message.MessageID,
 			})
@@ -66,9 +66,9 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 					ChatID:    message.Chat.ChatID(),
 				}))
 			if newMsg != nil {
-				dPost.MessageIDs = append(dPost.MessageIDs, database.MessageID{
-					ChatID:    message.Chat.ID,
-					MessageID: message.MessageID,
+				dPost.MessageIDs = append(dPost.MessageIDs, &database.MessageID{
+					ChatID:    newMsg.Chat.ID,
+					MessageID: newMsg.MessageID,
 				})
 				err = db.Post.Update(ctx, dPost)
 				if err != nil {
@@ -93,7 +93,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	post := &database.Post{
 		Type:   database.MediaTypePhoto,
 		FileID: message.Photo[len(message.Photo)-1].FileID,
-		MessageIDs: []database.MessageID{
+		MessageIDs: []*database.MessageID{
 			{
 				ChatID:    message.Chat.ID,
 				MessageID: message.MessageID,

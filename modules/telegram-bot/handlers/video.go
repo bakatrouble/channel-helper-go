@@ -17,7 +17,7 @@ func VideoHandler(ctx *th.Context, message telego.Message) error {
 	post := &database.Post{
 		Type:   database.MediaTypeVideo,
 		FileID: message.Video.FileID,
-		MessageIDs: []database.MessageID{
+		MessageIDs: []*database.MessageID{
 			{
 				ChatID:    message.Chat.ID,
 				MessageID: message.MessageID,

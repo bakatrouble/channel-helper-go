@@ -16,6 +16,7 @@ import (
 	"github.com/telegram-mini-apps/init-data-golang"
 	"slices"
 	"sync"
+	"time"
 )
 
 func StartWebAPI(ctx context.Context) {
@@ -97,7 +98,11 @@ func StartWebAPI(ctx context.Context) {
 		// get init data from query params
 		initData := c.Query("init_data")
 		logger.With("init_data", initData).Info("got init data")
-		if err := initdata.Validate(initData, config.BotToken, 0); err != nil {
+		expiration := time.Minute
+		if !config.Production {
+			expiration = 0
+		}
+		if err := initdata.Validate(initData, config.BotToken, expiration); err != nil {
 			logger.With("init_data", initData).With("err", err).Error("invalid init data")
 			c.JSON(400, gin.H{"status": "error", "message": "Invalid init data"})
 			return

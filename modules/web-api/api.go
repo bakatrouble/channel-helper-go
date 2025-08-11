@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/graceful"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/slog-gin"
 	"github.com/telegram-mini-apps/init-data-golang"
@@ -56,6 +57,8 @@ func StartWebAPI(ctx context.Context) {
 	router.Use(sloggin.New(logger))
 	router.Use(gin.Recovery())
 
+	router.Use(static.Serve("/miniapp", static.LocalFile("./miniapp/dist", true)))
+
 	g := router.Group("/:api_key")
 
 	g.Use(func(c *gin.Context) {
@@ -78,6 +81,15 @@ func StartWebAPI(ctx context.Context) {
 	g.POST("/gif", handlers.GifHandler)
 	g.GET("/hashes", handlers.HashesHandler)
 	g.GET("/ws", handlers.WebsocketHandler)
+	g.GET("/count", func(c *gin.Context) {
+		count, err := db.Post.UnsentCount(c)
+		if err != nil {
+			logger.With("err", err).Error("failed to get unsent count")
+			c.JSON(500, gin.H{"status": "error", "message": "Internal Server Error"})
+			return
+		}
+		c.JSON(200, gin.H{"status": "success", "count": count})
+	})
 
 	g2 := router.Group("")
 	g2.Use(cors.Default())
@@ -85,12 +97,18 @@ func StartWebAPI(ctx context.Context) {
 		// get init data from query params
 		initData := c.Query("init_data")
 		logger.With("init_data", initData).Info("got init data")
-		if initdata.Validate(initData, config.BotToken, 0) != nil {
+		if err := initdata.Validate(initData, config.BotToken, 0); err != nil {
+			logger.With("init_data", initData).With("err", err).Error("invalid init data")
 			c.JSON(400, gin.H{"status": "error", "message": "Invalid init data"})
 			return
 		}
 		data, _ := initdata.Parse(initData)
-		if !slices.Contains(config.AllowedSenderChats, data.Chat.ID) {
+		checkChat := data.Chat.ID
+		if checkChat == 0 {
+			checkChat = data.User.ID
+		}
+		if !slices.Contains(config.AllowedSenderChats, checkChat) {
+			logger.With("chat_id", checkChat).Error("chat not allowed to access API")
 			c.JSON(403, gin.H{"status": "error", "message": "Forbidden: chat not allowed"})
 			return
 		}

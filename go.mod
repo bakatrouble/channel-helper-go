@@ -25,6 +25,7 @@ require (
 
 require (
 	github.com/gin-contrib/cors v1.7.6
+	github.com/gin-contrib/static v1.1.5
 	github.com/telegram-mini-apps/init-data-golang v1.5.0
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dialect/sqlitedialect v1.2.15

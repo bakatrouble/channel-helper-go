@@ -12,6 +12,8 @@ import (
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/slog-gin"
+	"github.com/telegram-mini-apps/init-data-golang"
+	"slices"
 	"sync"
 )
 
@@ -76,6 +78,24 @@ func StartWebAPI(ctx context.Context) {
 	g.POST("/gif", handlers.GifHandler)
 	g.GET("/hashes", handlers.HashesHandler)
 	g.GET("/ws", handlers.WebsocketHandler)
+
+	g2 := router.Group("")
+	g2.Use(cors.Default())
+	g2.GET("/apiKey", func(c *gin.Context) {
+		// get init data from query params
+		initData := c.Query("init_data")
+		logger.With("init_data", initData).Info("got init data")
+		if initdata.Validate(initData, config.BotToken, 0) != nil {
+			c.JSON(400, gin.H{"status": "error", "message": "Invalid init data"})
+			return
+		}
+		data, _ := initdata.Parse(initData)
+		if !slices.Contains(config.AllowedSenderChats, data.Chat.ID) {
+			c.JSON(403, gin.H{"status": "error", "message": "Forbidden: chat not allowed"})
+			return
+		}
+		c.JSON(200, gin.H{"apiKey": config.ApiKey})
+	})
 
 	err = router.RunWithContext(ctx)
 	if err != nil && !errors.Is(err, context.Canceled) {

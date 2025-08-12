@@ -2,6 +2,7 @@
 import ky from "ky";
 import { useQuery } from "@tanstack/vue-query";
 import { apiBase } from "@/api.ts";
+import LoadingScreen from "@/screens/LoadingScreen.vue";
 
 const { apiKey } = defineProps<{
   apiKey: string;
@@ -17,14 +18,15 @@ const { data: count, isLoading: countLoading } = useQuery({
 </script>
 
 <template>
-  <div v-if="countLoading">
-    Loading...
-  </div>
-  <div v-else>
+  <template v-if="countLoading">
+    <loading-screen />
+  </template>
+  <div class="app-screen" v-else>
     Unsent posts count: {{ count }}
   </div>
 </template>
 
 <style scoped lang="sass">
-
+.app-screen
+    padding: 16px 24px
 </style>

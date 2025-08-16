@@ -43,16 +43,16 @@ func WebsocketHandler(c *gin.Context) {
 
 	for {
 		select {
-		case post := <-hub.PostCreated:
-			_ = conn.WriteJSON(gin.H{"type": "postCreated", "post": post})
-		case post := <-hub.PostSent:
-			_ = conn.WriteJSON(gin.H{"type": "postSent", "post": post})
-		case post := <-hub.PostDeleted:
-			_ = conn.WriteJSON(gin.H{"type": "postDeleted", "post": post})
-		case uploadTask := <-hub.UploadTaskCreated:
-			_ = conn.WriteJSON(gin.H{"type": "uploadTaskCreated", "uploadTask": uploadTask})
-		case uploadTask := <-hub.UploadTaskDone:
-			_ = conn.WriteJSON(gin.H{"type": "uploadTaskDone", "uploadTask": uploadTask})
+		//case post := <-hub.PostCreated:
+		//	_ = conn.WriteJSON(gin.H{"type": "postCreated", "post": post})
+		//case post := <-hub.PostSent:
+		//	_ = conn.WriteJSON(gin.H{"type": "postSent", "post": post})
+		//case post := <-hub.PostDeleted:
+		//	_ = conn.WriteJSON(gin.H{"type": "postDeleted", "post": post})
+		//case uploadTask := <-hub.UploadTaskCreated:
+		//	_ = conn.WriteJSON(gin.H{"type": "uploadTaskCreated", "uploadTask": uploadTask})
+		//case uploadTask := <-hub.UploadTaskDone:
+		//	_ = conn.WriteJSON(gin.H{"type": "uploadTaskDone", "uploadTask": uploadTask})
 		case msg := <-msgIn:
 			j, _ := json.Marshal(msg)
 			logger.With("msg", j).Info("received message from websocket")

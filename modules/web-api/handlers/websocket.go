@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"channel-helper-go/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/grbit/go-json"
@@ -13,7 +14,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func WebsocketHandler(c *gin.Context) {
-	hub := c.MustGet("hub").(*utils.Hub)
+	//hub := c.MustGet("hub").(*utils.Hub)
 	logger := c.MustGet("logger").(utils.Logger)
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)

@@ -8,10 +8,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/mymmrac/telego"
-	tu "github.com/mymmrac/telego/telegoutil"
 	"sync"
 	"time"
+
+	"github.com/mymmrac/telego"
+	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 func processTask(task *database.UploadTask, bot *telego.Bot, ctx context.Context) error {
@@ -122,6 +123,7 @@ func StartUploader(ctx context.Context) {
 	}
 
 	putUnprocessedTasks := func() {
+		logger.Info("getting unprocessed upload tasks")
 		tasks, err := db.UploadTask.GetUnsent(ctx)
 		if err != nil {
 			logger.With("err", err).Error("initial upload tasks fetch error")
@@ -133,6 +135,7 @@ func StartUploader(ctx context.Context) {
 		logger.With("count", len(tasks)).Info("upload tasks remaining")
 	}
 
+	go putUnprocessedTasks()
 	ticker := time.NewTicker(time.Minute)
 	for {
 		select {

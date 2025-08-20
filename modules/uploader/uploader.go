@@ -167,7 +167,7 @@ func StartUploader(ctx context.Context) {
 		case <-backlogTicker.C:
 			putUnprocessedTasks()
 			logger.Info("filled upload task backlog")
-			backlogTicker.Reset(time.Second)
+			backlogTicker.Reset(time.Minute)
 		case <-ctx.Done():
 			return
 		}

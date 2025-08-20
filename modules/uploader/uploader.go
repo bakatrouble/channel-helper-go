@@ -24,9 +24,13 @@ func processTask(task *database.UploadTask, bot *telego.Bot, ctx context.Context
 	logger := ctx.Value("logger").(utils.Logger)
 	var err error
 
-	task, err = db.UploadTask.GetByID(ctx, task.ID)
+	taskId := task.ID
+	task, err = db.UploadTask.GetByID(ctx, taskId)
 	if err != nil {
 		logger.With("err", err).Error("error fetching upload task by ID")
+	}
+	if task == nil {
+		return errors.New("task not found during refetch")
 	}
 	if task.IsProcessed {
 		logger.With("task_id", task.ID).Info("task already processed, skipping")

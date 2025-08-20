@@ -8,6 +8,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"regexp"
+	"strconv"
 	"sync"
 	"time"
 
@@ -21,6 +23,15 @@ func processTask(task *database.UploadTask, bot *telego.Bot, ctx context.Context
 	hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
 	var err error
+
+	task, err = db.UploadTask.GetByID(ctx, task.ID)
+	if err != nil {
+		logger.With("err", err).Error("error fetching upload task by ID")
+	}
+	if task.IsProcessed {
+		logger.With("task_id", task.ID).Info("task already processed, skipping")
+		return nil
+	}
 
 	post := &database.Post{
 		Type:      task.Type,
@@ -135,16 +146,28 @@ func StartUploader(ctx context.Context) {
 		logger.With("count", len(tasks)).Info("upload tasks remaining")
 	}
 
+	retryAfterRegex, _ := regexp.Compile(`retry after (\d+)`)
 	go putUnprocessedTasks()
-	ticker := time.NewTicker(time.Minute)
+	uploadTicker := time.NewTicker(time.Second)
+	backlogTicker := time.NewTicker(time.Minute)
 	for {
 		select {
-		case task := <-hub.UploadTaskCreated:
-			_ = processTask(task, bot, ctx)
-			logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
-		case <-ticker.C:
+		case <-uploadTicker.C:
+			if len(hub.UploadTaskCreated) > 0 {
+				task := <-hub.UploadTaskCreated
+				err = processTask(task, bot, ctx)
+				logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
+				if matched := retryAfterRegex.FindStringSubmatch(err.Error()); matched != nil {
+					seconds, _ := strconv.Atoi(matched[1])
+					uploadTicker.Reset(time.Second * time.Duration(seconds))
+					continue
+				}
+			}
+			uploadTicker.Reset(time.Second)
+		case <-backlogTicker.C:
 			putUnprocessedTasks()
-			ticker.Reset(time.Minute)
+			logger.Info("filled upload task backlog")
+			backlogTicker.Reset(time.Second)
 		case <-ctx.Done():
 			return
 		}

@@ -162,10 +162,12 @@ func StartUploader(ctx context.Context) {
 				task := <-hub.UploadTaskCreated
 				err = processTask(task, bot, ctx)
 				logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
-				if matched := retryAfterRegex.FindStringSubmatch(err.Error()); matched != nil {
-					seconds, _ := strconv.Atoi(matched[1])
-					uploadTicker.Reset(time.Second * time.Duration(seconds))
-					continue
+				if err != nil {
+					if matched := retryAfterRegex.FindStringSubmatch(err.Error()); matched != nil {
+						seconds, _ := strconv.Atoi(matched[1])
+						uploadTicker.Reset(time.Second * time.Duration(seconds))
+						continue
+					}
 				}
 			}
 			uploadTicker.Reset(time.Second)

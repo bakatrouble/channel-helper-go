@@ -91,10 +91,10 @@ func (r *UploadTaskRepository) GetUnsent(ctx context.Context) ([]*schema.UploadT
 }
 
 func (r *UploadTaskRepository) GetByID(ctx context.Context, id string) (*schema.UploadTask, error) {
-	var task *schema.UploadTask
+	task := new(schema.UploadTask)
 	if err := r.db.NewSelect().
 		Model(task).
-		Where("id = ?", id).
+		WherePK("id = ?", id).
 		Scan(ctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil // No unsent tasks found

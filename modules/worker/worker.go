@@ -7,10 +7,11 @@ import (
 	"channel-helper-go/utils"
 	"context"
 	"database/sql"
-	"github.com/mymmrac/telego"
-	tu "github.com/mymmrac/telego/telegoutil"
 	"sync"
 	"time"
+
+	"github.com/mymmrac/telego"
+	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
@@ -32,7 +33,7 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 		unsentCount := unsentPostsCount(ctx)
 		if unsentCount > config.GroupThreshold {
 			logger.With("count", unsentCount).Info("grouping photos for media group")
-			extraPosts, _ := db.Post.GetAdditionalUnsentByType(ctx, database.MediaTypePhoto)
+			extraPosts, _ := db.Post.GetAdditionalUnsentByType(ctx, database.MediaTypePhoto, post.ID)
 			media := make([]telego.InputMedia, 1)
 			media[0] = tu.MediaPhoto(inputFile)
 			for _, extraPost := range extraPosts {

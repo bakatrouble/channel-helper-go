@@ -226,7 +226,7 @@ func (r *PostRepository) GetRandomUnsent(ctx context.Context) (*schema.Post, err
 	return &post, nil
 }
 
-func (r *PostRepository) GetAdditionalUnsentByType(ctx context.Context, mediaType schema.MediaType) ([]*schema.Post, error) {
+func (r *PostRepository) GetAdditionalUnsentByType(ctx context.Context, mediaType schema.MediaType, notId string) ([]*schema.Post, error) {
 	var posts []*schema.Post
 	if err := r.db.NewSelect().
 		Model(&posts).
@@ -234,6 +234,7 @@ func (r *PostRepository) GetAdditionalUnsentByType(ctx context.Context, mediaTyp
 		Relation("ImageHash").
 		Where("is_sent = ?", false).
 		Where("type = ?", mediaType).
+		Where("id != ?", notId).
 		OrderExpr("random()").
 		Limit(9).
 		Scan(ctx); err != nil {

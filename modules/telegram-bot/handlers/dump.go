@@ -5,6 +5,7 @@ import (
 	"channel-helper-go/utils"
 	"encoding/json"
 	"fmt"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
@@ -14,6 +15,10 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 	db := ctx.Value("db").(*database.DBStruct)
 	config := ctx.Value("config").(*utils.Config)
 	logger := ctx.Value("logger").(utils.Logger)
+
+	if gtfo(ctx, message) {
+		return nil
+	}
 
 	logger.Info("creating dump")
 

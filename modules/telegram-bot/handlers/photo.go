@@ -4,10 +4,11 @@ import (
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"fmt"
+	"time"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
-	"time"
 )
 
 func PhotoHandler(ctx *th.Context, message telego.Message) error {
@@ -15,6 +16,10 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	hub, _ := ctx.Value("hub").(*utils.Hub)
 	bot := ctx.Bot()
 	logger, _ := ctx.Value("logger").(utils.Logger)
+
+	if gtfo(ctx, message) {
+		return nil
+	}
 
 	logger.Info("PhotoHandler called")
 

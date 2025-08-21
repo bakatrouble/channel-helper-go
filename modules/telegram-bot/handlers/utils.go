@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"channel-helper-go/utils"
+	"slices"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 func reactToMessage(ctx *th.Context, message *telego.Message) {
@@ -14,4 +18,19 @@ func reactToMessage(ctx *th.Context, message *telego.Message) {
 			Emoji: "👍",
 		}},
 	})
+}
+
+func gtfo(ctx *th.Context, message telego.Message) bool {
+	bot := ctx.Bot()
+	config := ctx.Value("config").(*utils.Config)
+
+	if slices.Contains(config.AllowedSenderChats, message.Chat.ID) {
+		return false
+	}
+
+	_, _ = bot.SendMessage(ctx, tu.Message(
+		message.Chat.ChatID(),
+		"GTFO",
+	))
+	return true
 }

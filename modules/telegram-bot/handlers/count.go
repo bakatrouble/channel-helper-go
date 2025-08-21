@@ -3,6 +3,7 @@ package handlers
 import (
 	"channel-helper-go/database"
 	"fmt"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
@@ -10,6 +11,10 @@ import (
 
 func CountHandler(ctx *th.Context, message telego.Message) error {
 	db := ctx.Value("db").(*database.DBStruct)
+
+	if gtfo(ctx, message) {
+		return nil
+	}
 
 	count, err := db.Post.UnsentCount(ctx)
 	if err != nil {

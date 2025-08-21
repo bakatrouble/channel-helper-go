@@ -134,13 +134,12 @@ func StartWorker(ctx context.Context) {
 		return
 	}
 
-	fetchAndSendPost(bot, ctx)
+	//fetchAndSendPost(bot, ctx)
 	ticker := time.NewTimer(config.Interval)
 	for {
 		select {
 		case <-ticker.C:
 			fetchAndSendPost(bot, ctx)
-			ticker.Reset(config.Interval)
 		case <-ctx.Done():
 			logger.Info("stopping worker")
 			return

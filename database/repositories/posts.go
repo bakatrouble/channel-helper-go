@@ -153,9 +153,10 @@ func (r *PostRepository) GetByMessageID(ctx context.Context, chatID int64, messa
 	var post schema.Post
 	if err := r.db.NewSelect().
 		Model(&post).
-		Relation("MessageIDs").
+		Relation("MessageIDs", func(q *bun.SelectQuery) *bun.SelectQuery {
+			return q.Where("chat_id = ? AND chat_id = ?", chatID, messageID)
+		}).
 		Relation("ImageHash").
-		Where("message_ids.chat_id = ? AND message_ids.message_id = ?", chatID, messageID).
 		Scan(ctx); err != nil {
 		return nil, err
 	}

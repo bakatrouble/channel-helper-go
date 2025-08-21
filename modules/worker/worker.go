@@ -135,7 +135,7 @@ func StartWorker(ctx context.Context) {
 	}
 
 	//fetchAndSendPost(bot, ctx)
-	ticker := time.NewTimer(config.Interval)
+	ticker := time.NewTicker(config.Interval)
 	for {
 		select {
 		case <-ticker.C:

@@ -3,8 +3,9 @@ package schema
 import (
 	"channel-helper-go/database/database_utils"
 	"context"
-	"github.com/uptrace/bun"
 	"time"
+
+	"github.com/uptrace/bun"
 )
 
 type MediaType string

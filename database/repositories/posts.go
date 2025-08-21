@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
 	"github.com/uptrace/bun"
 )
 
@@ -150,17 +151,18 @@ func (r *PostRepository) UnsentCount(ctx context.Context) (int, error) {
 }
 
 func (r *PostRepository) GetByMessageID(ctx context.Context, chatID int64, messageID int) (*schema.Post, error) {
-	var post schema.Post
+	var mID schema.MessageID
 	if err := r.db.NewSelect().
-		Model(&post).
-		Relation("MessageIDs", func(q *bun.SelectQuery) *bun.SelectQuery {
-			return q.Where("chat_id = ? AND chat_id = ?", chatID, messageID)
-		}).
-		Relation("ImageHash").
+		Model(&mID).
+		Relation("Post").
+		Where("chat_id = ? AND message_id = ?", chatID, messageID).
 		Scan(ctx); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	return &post, nil
+	return &mID.Post, nil
 }
 
 func (r *PostRepository) Delete(ctx context.Context, post *schema.Post) error {
@@ -187,7 +189,7 @@ func (r *PostRepository) Delete(ctx context.Context, post *schema.Post) error {
 		}
 	}
 
-	if _, err = tx.NewDelete().Model(post.MessageIDs).WherePK().Exec(ctx); err != nil {
+	if _, err = tx.NewDelete().Model(&post.MessageIDs).Where("post_id = ?", post.ID).Exec(ctx); err != nil {
 		return rollbackIfError(err, tx)
 	}
 

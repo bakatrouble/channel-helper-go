@@ -7,13 +7,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/mymmrac/telego"
-	th "github.com/mymmrac/telego/telegohandler"
-	tu "github.com/mymmrac/telego/telegoutil"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mymmrac/telego"
+	th "github.com/mymmrac/telego/telegohandler"
+	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 type botLogger struct {
@@ -79,34 +80,16 @@ func StartBot(ctx context.Context) {
 		ctx = ctx.WithValue("wg", wg)
 		ctx = ctx.WithValue("hub", hub)
 		ctx = ctx.WithValue("logger", logger)
+		ctx = ctx.WithValue("bot", bot)
 		return ctx.Next(update)
 	})
-	bh.Use(func(ctx *th.Context, update telego.Update) error {
-		if update.Message == nil {
-			return ctx.Next(update)
-		}
-
-		if update.Message.From == nil {
-			return ctx.Next(update)
-		}
-
-		if slices.Contains(config.AllowedSenderChats, update.Message.Chat.ID) {
-			return ctx.Next(update)
-		}
-
-		_, _ = bot.SendMessage(ctx, tu.Message(
-			update.Message.Chat.ChatID(),
-			"GTFO",
-		))
-		return nil
-	})
-	bh.HandleMessage(handlers.PhotoHandler, messageWithPhoto)
-	bh.HandleMessage(handlers.AnimationHandler, messageWithAnimation)
-	bh.HandleMessage(handlers.VideoHandler, messageWithVideo)
+	bh.HandleMessage(handlers.PhotoHandler, gtfo, messageWithPhoto)
+	bh.HandleMessage(handlers.AnimationHandler, gtfo, messageWithAnimation)
+	bh.HandleMessage(handlers.VideoHandler, gtfo, messageWithVideo)
 	bh.HandleMessage(handlers.DeleteCommandHandler, messageCommands([]string{"delete", "del", "remove", "rem", "rm"}))
-	bh.HandleMessage(handlers.CountHandler, messageCommands([]string{"count", "cnt"}))
-	bh.HandleMessage(handlers.DumpDbHandler, messageCommands([]string{"dump", "dumpdb", "dump_db"}))
-	bh.HandleMessage(handlers.UnknownHandler, th.AnyMessage())
+	bh.HandleMessage(handlers.CountHandler, gtfo, messageCommands([]string{"count", "cnt"}))
+	bh.HandleMessage(handlers.DumpDbHandler, gtfo, messageCommands([]string{"dump", "dumpdb", "dump_db"}))
+	bh.HandleMessage(handlers.UnknownHandler, gtfo, th.AnyMessage())
 	bh.HandleCallbackQuery(handlers.DeleteCallbackHandler, th.CallbackDataEqual("/delete"))
 
 	// Initialize done chan
@@ -138,6 +121,29 @@ func StartBot(ctx context.Context) {
 
 	<-done
 	logger.Info("telegram bot stopped")
+}
+
+func gtfo(ctx context.Context, update telego.Update) bool {
+	config := ctx.Value("config").(*utils.Config)
+	bot := ctx.Value("bot").(*telego.Bot)
+
+	if update.Message == nil {
+		return true
+	}
+
+	if update.Message.From == nil {
+		return true
+	}
+
+	if slices.Contains(config.AllowedSenderChats, update.Message.Chat.ID) {
+		return true
+	}
+
+	_, _ = bot.SendMessage(ctx, tu.Message(
+		update.Message.Chat.ChatID(),
+		"GTFO",
+	))
+	return false
 }
 
 func messageWithAnimation(_ context.Context, update telego.Update) bool {

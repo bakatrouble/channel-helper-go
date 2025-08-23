@@ -4,10 +4,11 @@ import (
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"encoding/base64"
-	"github.com/gin-gonic/gin"
 	"io"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type GifHandlerBasePayload struct {
@@ -41,15 +42,15 @@ func GifHandler(c *gin.Context) {
 			return
 		}
 	} else {
-		var payloadBase64 PhotoHandlerBasePayload
-		var payloadUrl PhotoHandlerUrlPayload
-		if err = c.BindJSON(&payloadBase64); err == nil {
+		var payloadBase64 GifHandlerBasePayload
+		var payloadUrl GifHandlerUrlPayload
+		if err = c.ShouldBindBodyWithJSON(&payloadBase64); err == nil {
 			gifBytes, err = base64.StdEncoding.DecodeString(payloadBase64.Base64)
 			if err != nil {
 				c.JSON(400, gin.H{"status": "error", "message": "Invalid base64 data"})
 				return
 			}
-		} else if err = c.BindJSON(&payloadUrl); err == nil {
+		} else if err = c.ShouldBindBodyWithJSON(&payloadUrl); err == nil {
 			resp, err := http.Get(payloadUrl.Url)
 			if err != nil {
 				c.JSON(400, gin.H{"status": "error", "message": "Failed to fetch image from URL"})

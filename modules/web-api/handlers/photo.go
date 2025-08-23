@@ -5,9 +5,6 @@ import (
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"encoding/base64"
-	"github.com/gin-gonic/gin"
-	"github.com/nfnt/resize"
-	_ "golang.org/x/image/webp"
 	"image"
 	_ "image/gif"
 	"image/jpeg"
@@ -16,6 +13,10 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/nfnt/resize"
+	_ "golang.org/x/image/webp"
 )
 
 type PhotoHandlerBasePayload struct {
@@ -54,14 +55,14 @@ func PhotoHandler(c *gin.Context) {
 	} else {
 		var payloadBase64 PhotoHandlerBasePayload
 		var payloadUrl PhotoHandlerUrlPayload
-		if err = c.BindJSON(&payloadBase64); err == nil {
+		if err = c.ShouldBindBodyWithJSON(&payloadBase64); err == nil {
 			imageBytes, err = base64.StdEncoding.DecodeString(payloadBase64.Base64)
 			if err != nil {
 				c.JSON(400, gin.H{"status": "error", "message": "Invalid base64 data"})
 				logger.With("err", err).Error("invalid base64 data")
 				return
 			}
-		} else if err = c.BindJSON(&payloadUrl); err == nil {
+		} else if err = c.ShouldBindBodyWithJSON(&payloadUrl); err == nil {
 			resp, err := http.Get(payloadUrl.Url)
 			if err != nil {
 				c.JSON(400, gin.H{"status": "error", "message": "Failed to fetch image from URL"})

@@ -59,9 +59,8 @@ func GifHandler(c *gin.Context) {
 			defer func(Body io.ReadCloser) {
 				_ = Body.Close()
 			}(resp.Body)
-			gifBytes = make([]byte, resp.ContentLength)
-			_, err = resp.Body.Read(gifBytes)
-			if err != nil && err != io.EOF {
+
+			if gifBytes, err = io.ReadAll(resp.Body); err != nil && err != io.EOF {
 				c.JSON(500, gin.H{"status": "error", "message": "Failed to read image from URL"})
 				return
 			}

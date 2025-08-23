@@ -72,9 +72,8 @@ func PhotoHandler(c *gin.Context) {
 			defer func(Body io.ReadCloser) {
 				_ = Body.Close()
 			}(resp.Body)
-			imageBytes = make([]byte, resp.ContentLength)
 
-			if _, err = resp.Body.Read(imageBytes); err != nil && err != io.EOF {
+			if imageBytes, err = io.ReadAll(resp.Body); err != nil && err != io.EOF {
 				c.JSON(500, gin.H{"status": "error", "message": "Failed to read image from URL"})
 				logger.With("err", err).With("url", payloadUrl.Url).Error("failed to read image from url")
 				return

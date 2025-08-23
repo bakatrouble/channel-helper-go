@@ -8,15 +8,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
+	"sync"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/graceful"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/slog-gin"
 	"github.com/telegram-mini-apps/init-data-golang"
-	"slices"
-	"sync"
-	"time"
 )
 
 func StartWebAPI(ctx context.Context) {
@@ -76,8 +77,8 @@ func StartWebAPI(ctx context.Context) {
 		c.Next()
 	})
 
-	g.Use(cors.Default())
-
+	router.Use(cors.Default())
+	g.OPTIONS("/*group", cors.Default())
 	g.POST("/photo", handlers.PhotoHandler)
 	g.POST("/gif", handlers.GifHandler)
 	g.GET("/hashes", handlers.HashesHandler)

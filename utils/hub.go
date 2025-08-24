@@ -14,10 +14,10 @@ type Hub struct {
 
 func NewHub() Hub {
 	return Hub{
-		PostCreated:       make(chan *database.Post, 100),
-		PostSent:          make(chan *database.Post, 100),
-		PostDeleted:       make(chan *database.Post, 100),
-		UploadTaskCreated: make(chan *database.UploadTask, 100),
-		UploadTaskDone:    make(chan *database.UploadTask, 100),
+		PostCreated:       make(chan *database.Post, 1024),
+		PostSent:          make(chan *database.Post, 1024),
+		PostDeleted:       make(chan *database.Post, 1024),
+		UploadTaskCreated: make(chan *database.UploadTask, 1024),
+		UploadTaskDone:    make(chan *database.UploadTask, 1024),
 	}
 }

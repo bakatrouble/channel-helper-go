@@ -63,6 +63,7 @@ func StartWebAPI(ctx context.Context) {
 
 	g := router.Group("/:api_key")
 
+	corsMiddleware := cors.Default()
 	g.Use(func(c *gin.Context) {
 		apiKey := c.Param("api_key")
 		if apiKey != config.ApiKey {
@@ -74,16 +75,17 @@ func StartWebAPI(ctx context.Context) {
 		c.Set("db", db)
 		c.Set("hub", hub)
 		c.Set("logger", logger)
+		c.Set("cors", corsMiddleware)
 		c.Next()
 	})
 
-	router.Use(cors.Default())
-	g.OPTIONS("/*group", cors.Default())
-	g.POST("/photo", handlers.PhotoHandler)
-	g.POST("/gif", handlers.GifHandler)
-	g.GET("/hashes", handlers.HashesHandler)
-	g.GET("/ws", handlers.WebsocketHandler)
-	g.GET("/count", func(c *gin.Context) {
+	router.Use(corsMiddleware)
+	g.OPTIONS("/*group", corsMiddleware)
+	g.POST("/photo", corsMiddleware, handlers.PhotoHandler)
+	g.POST("/gif", corsMiddleware, handlers.GifHandler)
+	g.GET("/hashes", corsMiddleware, handlers.HashesHandler)
+	g.GET("/ws", corsMiddleware, handlers.WebsocketHandler)
+	g.GET("/count", corsMiddleware, func(c *gin.Context) {
 		count, err := db.Post.UnsentCount(c)
 		if err != nil {
 			logger.With("err", err).Error("failed to get unsent count")
@@ -94,8 +96,8 @@ func StartWebAPI(ctx context.Context) {
 	})
 
 	g2 := router.Group("")
-	g2.Use(cors.Default())
-	g2.GET("/apiKey", func(c *gin.Context) {
+	g2.Use(corsMiddleware)
+	g2.GET("/apiKey", corsMiddleware, func(c *gin.Context) {
 		// get init data from query params
 		initData := c.Query("init_data")
 		logger.With("init_data", initData).Info("got init data")

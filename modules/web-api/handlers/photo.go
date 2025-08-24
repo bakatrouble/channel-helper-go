@@ -98,7 +98,7 @@ func PhotoHandler(c *gin.Context) {
 		return
 	}
 	if imConfig.Width > 2000 || imConfig.Height > 2000 {
-		im = resize.Resize(2000, 2000, im, resize.Lanczos3)
+		im = resize.Thumbnail(2000, 2000, im, resize.Lanczos3)
 	}
 	imageBuffer := new(bytes.Buffer)
 	if err = jpeg.Encode(imageBuffer, im, &jpeg.Options{Quality: 100}); err != nil {

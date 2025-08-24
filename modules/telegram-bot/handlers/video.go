@@ -10,7 +10,7 @@ import (
 
 func VideoHandler(ctx *th.Context, message telego.Message) error {
 	db, _ := ctx.Value("db").(*database.DBStruct)
-	hub, _ := ctx.Value("hub").(*utils.Hub)
+	//hub, _ := ctx.Value("hub").(*utils.Hub)
 	logger, _ := ctx.Value("logger").(utils.Logger)
 
 	if gtfo(ctx, message) {
@@ -37,7 +37,7 @@ func VideoHandler(ctx *th.Context, message telego.Message) error {
 
 	reactToMessage(ctx, &message)
 
-	hub.PostCreated <- post
+	//hub.PostCreated <- post
 
 	return nil
 }

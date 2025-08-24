@@ -16,7 +16,7 @@ import (
 
 func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 	config := ctx.Value("config").(*utils.Config)
-	hub := ctx.Value("hub").(*utils.Hub)
+	//hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
 	db := ctx.Value("db").(*database.DBStruct)
 	var err error
@@ -72,7 +72,7 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 		}
 	}
 
-	hub.PostSent <- post
+	//hub.PostSent <- post
 
 	logger.With("id", post.ID).Info("sent post")
 

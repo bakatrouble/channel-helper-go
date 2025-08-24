@@ -4,6 +4,7 @@ import (
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"errors"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
@@ -84,7 +85,7 @@ func DeleteCallbackHandler(ctx *th.Context, callbackQuery telego.CallbackQuery) 
 
 func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 	db := ctx.Value("db").(*database.DBStruct)
-	hub, _ := ctx.Value("hub").(*utils.Hub)
+	//hub, _ := ctx.Value("hub").(*utils.Hub)
 	logger, _ := ctx.Value("logger").(utils.Logger)
 
 	logger.With("chat_id", message.Chat.ID, "message_id", message.MessageID).Info("deleting post")
@@ -104,7 +105,7 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 		return nil, err
 	}
 
-	hub.PostDeleted <- post
+	//hub.PostDeleted <- post
 	logger.With("id", post.ID).Info("deleted post")
 
 	return nil, nil

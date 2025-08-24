@@ -4,15 +4,16 @@ import (
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"fmt"
+	"time"
+
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
-	"time"
 )
 
 func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	db, _ := ctx.Value("db").(*database.DBStruct)
-	hub, _ := ctx.Value("hub").(*utils.Hub)
+	//hub, _ := ctx.Value("hub").(*utils.Hub)
 	bot := ctx.Bot()
 	logger, _ := ctx.Value("logger").(utils.Logger)
 
@@ -106,7 +107,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	err = db.Post.Create(ctx, post)
 	reactToMessage(ctx, &message)
 
-	hub.PostCreated <- post
+	//hub.PostCreated <- post
 	logger.With("id", post.ID).Info("created photo post id")
 
 	return nil

@@ -101,8 +101,8 @@ func processTask(task *database.UploadTask, bot *telego.Bot, ctx context.Context
 		return err
 	}
 
-	hub.UploadTaskDone <- task
-	hub.PostCreated <- post
+	//hub.UploadTaskDone <- task
+	//hub.PostCreated <- post
 	logger.With("post_id", post.ID).
 		With("task_id", task.ID).
 		Info("created post from upload task")

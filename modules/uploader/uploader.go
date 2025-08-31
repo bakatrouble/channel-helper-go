@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"errors"
 	"regexp"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -17,15 +18,14 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-func processTask(task *database.UploadTask, bot *telego.Bot, ctx context.Context) error {
+func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	config := ctx.Value("config").(*utils.Config)
 	db := ctx.Value("db").(*database.DBStruct)
-	hub := ctx.Value("hub").(*utils.Hub)
+	//hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
 	var err error
 
-	taskId := task.ID
-	task, err = db.UploadTask.GetByID(ctx, taskId)
+	task, err := db.UploadTask.GetByID(ctx, taskId)
 	if err != nil {
 		logger.With("err", err).Error("error fetching upload task by ID")
 		return err
@@ -138,6 +138,8 @@ func StartUploader(ctx context.Context) {
 		return
 	}
 
+	queue := make([]string, 0)
+
 	putUnprocessedTasks := func() {
 		logger.Info("getting unprocessed upload tasks")
 		tasks, err := db.UploadTask.GetUnsent(ctx)
@@ -146,21 +148,33 @@ func StartUploader(ctx context.Context) {
 			return
 		}
 		for _, task := range tasks {
-			hub.UploadTaskCreated <- task
+			if !slices.Contains(queue, task.ID) {
+				queue = append(queue, task.ID)
+			}
 		}
 		logger.With("count", len(tasks)).Info("upload tasks remaining")
 	}
 
+	channelWatcher := func() {
+		for {
+			task := <-hub.UploadTaskCreated
+			queue = append(queue, task.ID)
+			logger.With("count", len(queue)).Info("upload tasks created")
+		}
+	}
+
 	retryAfterRegex, _ := regexp.Compile(`retry after (\d+)`)
 	go putUnprocessedTasks()
+	go channelWatcher()
 	uploadTicker := time.NewTicker(time.Second)
 	backlogTicker := time.NewTicker(time.Minute)
 	for {
 		select {
 		case <-uploadTicker.C:
-			if len(hub.UploadTaskCreated) > 0 {
-				task := <-hub.UploadTaskCreated
-				err = processTask(task, bot, ctx)
+			if len(queue) > 0 {
+				taskId := queue[0]
+				queue = queue[1:]
+				err = processTask(taskId, bot, ctx)
 				logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
 				if err != nil {
 					if matched := retryAfterRegex.FindStringSubmatch(err.Error()); matched != nil {

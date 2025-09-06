@@ -155,6 +155,7 @@ func (r *PostRepository) GetByMessageID(ctx context.Context, chatID int64, messa
 	if err := r.db.NewSelect().
 		Model(&mID).
 		Relation("Post").
+		Relation("Post.ImageHash").
 		Where("chat_id = ? AND message_id = ?", chatID, messageID).
 		Scan(ctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

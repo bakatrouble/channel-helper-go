@@ -39,8 +39,8 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	}
 
 	post := &database.Post{
-		Type:      task.Type,
-		ImageHash: task.ImageHash,
+		Type:        task.Type,
+		ImageHashID: task.ImageHashID,
 	}
 	replyMarkup := tu.InlineKeyboard(
 		tu.InlineKeyboardRow(
@@ -94,7 +94,7 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	task.SentAt = database_utils.Now()
 	task.IsProcessed = true
 	task.Data = nil
-	task.ImageHash = nil
+	task.ImageHashID = nil
 	err = db.UploadTask.Update(ctx, task)
 	if err != nil {
 		logger.With("err", err).Error("error updating upload task")

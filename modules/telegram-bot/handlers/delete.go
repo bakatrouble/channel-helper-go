@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"channel-helper-go/database"
+	"channel-helper-go/database/schema"
 	"channel-helper-go/utils"
 	"errors"
 
@@ -90,8 +91,9 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 
 	logger.With("chat_id", message.Chat.ID, "message_id", message.MessageID).Info("deleting post")
 
-	post, err := db.Post.GetByMessageID(ctx, message.Chat.ID, message.MessageID)
-	if err != nil {
+	var post *schema.Post
+	var err error
+	if post, err = db.Post.GetByMessageID(ctx, message.Chat.ID, message.MessageID); err != nil {
 		logger.With("err", err).Error("failed to query post")
 		return nil, err
 	}
@@ -99,8 +101,7 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 		return errors.New("post not found"), nil
 	}
 
-	err = db.Post.Delete(ctx, post)
-	if err != nil {
+	if err = db.Post.Delete(ctx, post); err != nil {
 		logger.With("err", err).Error("failed to delete post")
 		return nil, err
 	}

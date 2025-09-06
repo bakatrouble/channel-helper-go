@@ -175,7 +175,7 @@ func StartUploader(ctx context.Context) {
 				taskId := queue[0]
 				queue = queue[1:]
 				err = processTask(taskId, bot, ctx)
-				logger.With("count", len(hub.UploadTaskCreated)).Info("upload tasks remaining")
+				logger.With("count", len(queue)).Info("upload tasks remaining")
 				if err != nil {
 					if matched := retryAfterRegex.FindStringSubmatch(err.Error()); matched != nil {
 						seconds, _ := strconv.Atoi(matched[1])

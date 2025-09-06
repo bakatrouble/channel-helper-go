@@ -1,13 +1,10 @@
 package handlers
 
 import (
-	"bytes"
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"encoding/base64"
-	"image"
 	_ "image/gif"
-	"image/jpeg"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
@@ -15,7 +12,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nfnt/resize"
 	_ "golang.org/x/image/webp"
 )
 
@@ -85,28 +81,11 @@ func PhotoHandler(c *gin.Context) {
 		}
 	}
 
-	imConfig, _, err := image.DecodeConfig(bytes.NewReader(imageBytes))
-	if err != nil {
-		c.JSON(400, gin.H{"status": "error", "message": "Invalid image format"})
-		logger.With("err", err).Error("invalid image format")
+	if imageBytes, err = utils.ResizeImage(imageBytes); err != nil {
+		c.JSON(500, gin.H{"status": "error", "message": "Failed to process image"})
+		logger.With("err", err).Error("failed to process image")
 		return
 	}
-	im, _, err := image.Decode(bytes.NewReader(imageBytes))
-	if err != nil {
-		c.JSON(400, gin.H{"status": "error", "message": "Invalid image format"})
-		logger.With("err", err).Error("invalid image format")
-		return
-	}
-	if imConfig.Width > 2000 || imConfig.Height > 2000 {
-		im = resize.Thumbnail(2000, 2000, im, resize.Lanczos3)
-	}
-	imageBuffer := new(bytes.Buffer)
-	if err = jpeg.Encode(imageBuffer, im, &jpeg.Options{Quality: 100}); err != nil {
-		c.JSON(500, gin.H{"status": "error", "message": "Failed to encode image"})
-		logger.With("err", err).Error("failed to encode image")
-		return
-	}
-	imageBytes = imageBuffer.Bytes()
 
 	hash, err := utils.HashImage(imageBytes)
 	if err != nil {

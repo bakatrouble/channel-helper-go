@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net"
 	"slices"
 	"sync"
 	"time"
@@ -50,6 +51,15 @@ func StartWebAPI(ctx context.Context) {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	corsMiddleware := cors.Default()
+	setContextValues := func(c *gin.Context) {
+		c.Set("config", config)
+		c.Set("db", db)
+		c.Set("hub", hub)
+		c.Set("logger", logger)
+		c.Set("cors", corsMiddleware)
+	}
+
 	router, _ := graceful.Default(
 		graceful.WithAddr(fmt.Sprintf("127.0.0.1:%d", config.ApiPort)),
 	)
@@ -61,9 +71,19 @@ func StartWebAPI(ctx context.Context) {
 
 	router.Use(static.Serve("/miniapp", static.LocalFile("./miniapp/dist", true)))
 
+	router.POST("/internalSend", func(c *gin.Context) {
+		ip := net.ParseIP(c.ClientIP())
+		if ip == nil || !ip.IsLoopback() {
+			c.JSON(403, gin.H{"status": "error", "message": "Forbidden"})
+			c.Abort()
+			return
+		}
+		setContextValues(c)
+		c.Next()
+	}, handlers.InternalSendHandler)
+
 	g := router.Group("/:api_key")
 
-	corsMiddleware := cors.Default()
 	g.Use(func(c *gin.Context) {
 		apiKey := c.Param("api_key")
 		if apiKey != config.ApiKey {
@@ -71,11 +91,7 @@ func StartWebAPI(ctx context.Context) {
 			c.Abort()
 			return
 		}
-		c.Set("config", config)
-		c.Set("db", db)
-		c.Set("hub", hub)
-		c.Set("logger", logger)
-		c.Set("cors", corsMiddleware)
+		setContextValues(c)
 		c.Next()
 	})
 

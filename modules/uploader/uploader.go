@@ -65,7 +65,7 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	case database.MediaTypeAnimation:
 		msg, err = bot.SendDocument(ctx, &telego.SendDocumentParams{
 			ChatID:      telego.ChatID{ID: config.UploadChatId},
-			Document:    tu.FileFromBytes(*task.Data, "image.gif"),
+			Document:    tu.FileFromBytes(*task.Data, "image.mp4"),
 			ReplyMarkup: replyMarkup,
 		})
 		if err != nil {

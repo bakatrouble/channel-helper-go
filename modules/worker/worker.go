@@ -52,7 +52,7 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 		}
 		_, err = bot.SendPhoto(ctx, tu.Photo(chatId, inputFile))
 	case database.MediaTypeVideo:
-		_, err = bot.SendVideo(ctx, tu.Video(chatId, inputFile))
+		_, err = bot.SendVideo(ctx, tu.Video(chatId, inputFile).WithSupportsStreaming())
 	case database.MediaTypeAnimation:
 		_, err = bot.SendDocument(ctx, tu.Document(chatId, inputFile))
 	}

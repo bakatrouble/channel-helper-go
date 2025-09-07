@@ -63,9 +63,9 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 
 		post.FileID = msg.Photo[len(msg.Photo)-1].FileID
 	case database.MediaTypeAnimation:
-		msg, err = bot.SendDocument(ctx, &telego.SendDocumentParams{
+		msg, err = bot.SendAnimation(ctx, &telego.SendAnimationParams{
 			ChatID:      telego.ChatID{ID: config.UploadChatId},
-			Document:    tu.FileFromBytes(*task.Data, "image.mp4"),
+			Animation:   tu.FileFromBytes(*task.Data, "image.mp4"),
 			ReplyMarkup: replyMarkup,
 		})
 		if err != nil {
@@ -74,6 +74,17 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 		}
 
 		post.FileID = msg.Document.FileID
+	case database.MediaTypeVideo:
+		msg, err = bot.SendVideo(ctx, &telego.SendVideoParams{
+			ChatID:            telego.ChatID{ID: config.UploadChatId},
+			Video:             tu.FileFromBytes(*task.Data, "video.mp4"),
+			ReplyMarkup:       replyMarkup,
+			SupportsStreaming: true,
+		})
+		if err != nil {
+			logger.With("err", err).Error("error uploading video")
+			return err
+		}
 	default:
 		logger.With("type", task.Type).Error("unsupported upload task type")
 		return errors.New("unsupported upload task type")

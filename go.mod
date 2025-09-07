@@ -5,30 +5,31 @@ go 1.24.6
 require (
 	github.com/DrSmithFr/go-console v1.4.4
 	github.com/alitto/pond/v2 v2.5.0
+	github.com/cappuccinotm/slogx v1.4.2
+	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/graceful v1.1.4
+	github.com/gin-contrib/static v1.1.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/goccy/go-yaml v1.18.0
 	github.com/gookit/slog v0.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/grbit/go-json v0.11.0
+	github.com/liamg/magic v0.0.1
 	github.com/moroz/uuidv7-go v0.0.0-20240305042206-a7e3dca2a87e
 	github.com/mymmrac/telego v1.3.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/samber/slog-gin v1.17.1
-	github.com/vbauerster/mpb/v8 v8.10.2
-	golang.org/x/image v0.30.0
-	github.com/cappuccinotm/slogx v1.4.2
-	github.com/gin-contrib/cors v1.7.6
-	github.com/gin-contrib/static v1.1.5
-	github.com/liamg/magic v0.0.1
 	github.com/telegram-mini-apps/init-data-golang v1.5.0
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dialect/sqlitedialect v1.2.15
 	github.com/uptrace/bun/driver/sqliteshim v1.2.15
+	github.com/vbauerster/mpb/v8 v8.10.2
+	github.com/vimeo/go-magic v1.0.0
+	golang.org/x/image v0.30.0
+	gopkg.in/vansante/go-ffprobe.v2 v2.2.1
 )
 
 require (
-	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
@@ -51,6 +52,7 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/liamg/magic"
+	"github.com/vimeo/go-magic/magic"
 )
 
 type SharedChatPayload struct {
@@ -32,16 +32,11 @@ func InternalSendHandler(c *gin.Context) {
 		return
 	}
 
-	t, err := magic.Lookup(mediaBytes)
-	if err != nil {
-		c.JSON(500, gin.H{"status": "error", "message": "Failed to determine file type"})
-		logger.With("err", err).Error("failed to determine file type")
-		return
-	}
+	mime := magic.MimeFromBytes(mediaBytes)
 
 	var task *database.UploadTask
-	switch t.Extension {
-	case "jpg":
+	switch mime {
+	case "image/jpeg":
 		hash, err := utils.HashImage(mediaBytes)
 		if err != nil {
 			logger.With("err", err).Error("error hashing image")
@@ -66,14 +61,26 @@ func InternalSendHandler(c *gin.Context) {
 				Hash: hash,
 			},
 		}
-	case "mp4":
+	case "video/mp4":
+		var hasAudio bool
+		var err error
+		var t database.MediaType
+		if hasAudio, err = utils.Mp4HasAudio(c, mediaBytes); err != nil {
+			logger.With("err", err).Error("error checking mp4 for audio")
+			c.JSON(500, gin.H{"status": "error", "message": "Failed to check mp4 for audio"})
+			return
+		} else if hasAudio {
+			t = database.MediaTypeVideo
+		} else {
+			t = database.MediaTypeAnimation
+		}
 		task = &database.UploadTask{
-			Type: database.MediaTypeVideo,
+			Type: t,
 			Data: &mediaBytes,
 		}
 	default:
-		c.JSON(400, gin.H{"status": "error", "message": "Unsupported file type: " + t.Extension})
-		logger.With("type", t.Extension).Error("unsupported file type")
+		c.JSON(400, gin.H{"status": "error", "message": "Unsupported file type: " + mime})
+		logger.With("type", mime).Error("unsupported file type")
 		return
 	}
 

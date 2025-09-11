@@ -100,6 +100,7 @@ func StartWebAPI(ctx context.Context) {
 	g.POST("/photo", corsMiddleware, handlers.PhotoHandler)
 	g.POST("/gif", corsMiddleware, handlers.GifHandler)
 	g.GET("/hashes", corsMiddleware, handlers.HashesHandler)
+	g.GET("/hashes/:hash", corsMiddleware, handlers.HashExistsHandler)
 	g.GET("/ws", corsMiddleware, handlers.WebsocketHandler)
 	g.GET("/count", corsMiddleware, func(c *gin.Context) {
 		count, err := db.Post.UnsentCount(c)

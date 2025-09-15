@@ -91,22 +91,24 @@ func ConvertToMp4(ctx context.Context, mediaBytes []byte) ([]byte, error) {
 }
 
 func ResizeImage(imageBytes []byte) ([]byte, error) {
-	imConfig, _, err := image.DecodeConfig(bytes.NewReader(imageBytes))
-	if err != nil {
-		return nil, err
-	}
-	im, _, err := image.Decode(bytes.NewReader(imageBytes))
-	if err != nil {
+	var imConfig image.Config
+	var im image.Image
+	var err error
+
+	if imConfig, _, err = image.DecodeConfig(bytes.NewReader(imageBytes)); err != nil {
 		return nil, err
 	}
 	if imConfig.Width+imConfig.Height > 10000 {
+		if im, _, err = image.Decode(bytes.NewReader(imageBytes)); err != nil {
+			return nil, err
+		}
 		w := float64(imConfig.Width)
 		h := float64(imConfig.Height)
 		scale := float64(10000) / (w + h)
 		im = resize.Thumbnail(uint(math.Floor(w*scale)), uint(math.Floor(h*scale)), im, resize.Lanczos3)
 	}
 	buf := new(bytes.Buffer)
-	if err = jpeg.Encode(buf, im, &jpeg.Options{Quality: 95}); err != nil {
+	if err = jpeg.Encode(buf, im, &jpeg.Options{Quality: 100}); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

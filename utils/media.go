@@ -98,10 +98,10 @@ func ResizeImage(imageBytes []byte) ([]byte, error) {
 	if imConfig, _, err = image.DecodeConfig(bytes.NewReader(imageBytes)); err != nil {
 		return nil, err
 	}
+	if im, _, err = image.Decode(bytes.NewReader(imageBytes)); err != nil {
+		return nil, err
+	}
 	if imConfig.Width+imConfig.Height > 10000 {
-		if im, _, err = image.Decode(bytes.NewReader(imageBytes)); err != nil {
-			return nil, err
-		}
 		w := float64(imConfig.Width)
 		h := float64(imConfig.Height)
 		scale := float64(10000) / (w + h)

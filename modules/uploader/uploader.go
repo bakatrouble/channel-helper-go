@@ -51,6 +51,14 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	var msg *telego.Message
 	switch task.Type {
 	case database.MediaTypePhoto:
+		if len(*task.Data) > 10*1024*1024 {
+			c, err := utils.CompressJpeg(*task.Data)
+			if err != nil {
+				logger.With("err", err).Error("error compressing photo")
+				return err
+			}
+			task.Data = &c
+		}
 		msg, err = bot.SendPhoto(ctx, &telego.SendPhotoParams{
 			ChatID:      telego.ChatID{ID: config.UploadChatId},
 			Photo:       tu.FileFromBytes(*task.Data, "image.jpg"),

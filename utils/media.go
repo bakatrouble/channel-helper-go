@@ -114,6 +114,20 @@ func ResizeImage(imageBytes []byte) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func CompressJpeg(imageBytes []byte) ([]byte, error) {
+	var im image.Image
+	var err error
+
+	if im, _, err = image.Decode(bytes.NewReader(imageBytes)); err != nil {
+		return nil, err
+	}
+	buf := new(bytes.Buffer)
+	if err = jpeg.Encode(buf, im, &jpeg.Options{Quality: 85}); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
 func Mp4HasAudio(ctx context.Context, mediaBytes []byte) (bool, error) {
 	var data *ffprobe.ProbeData
 	var err error

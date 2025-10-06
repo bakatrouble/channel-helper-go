@@ -8,6 +8,7 @@ require (
 	github.com/cappuccinotm/slogx v1.4.2
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-contrib/graceful v1.1.4
+	github.com/gin-contrib/pprof v1.5.3
 	github.com/gin-contrib/static v1.1.5
 	github.com/gin-gonic/gin v1.10.1
 	github.com/goccy/go-yaml v1.18.0

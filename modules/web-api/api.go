@@ -15,6 +15,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/graceful"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/slog-gin"
@@ -68,6 +69,7 @@ func StartWebAPI(ctx context.Context) {
 
 	router.Use(sloggin.New(logger))
 	router.Use(gin.Recovery())
+	pprof.Register(router)
 
 	router.Use(static.Serve("/miniapp", static.LocalFile("./miniapp/dist", true)))
 

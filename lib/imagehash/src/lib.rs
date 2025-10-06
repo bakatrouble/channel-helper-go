@@ -6,5 +6,8 @@ pub extern "C" fn hash_image(buf: *const u8, size: u32) -> *mut std::ffi::c_char
     let hasher = imagehash::PerceptualHash::new()
         .with_image_size(8, 8)
         .with_hash_size(8, 8);
-    std::ffi::CString::new(hasher.hash(&img).to_string()).unwrap().into_raw()
+    let result = std::ffi::CString::new(hasher.hash(&img).to_string()).unwrap().into_raw();
+    drop(hasher);
+    drop(img);
+    result
 }

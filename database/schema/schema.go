@@ -57,6 +57,11 @@ type MessageID struct {
 	Post          Post `bun:"rel:belongs-to,join:post_id=id"`
 }
 
+type Settings struct {
+	bun.BaseModel  `bun:"table:settings,alias:s"`
+	GroupThreshold int `bun:",notnull"`
+}
+
 func (p *Post) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:

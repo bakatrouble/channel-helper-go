@@ -31,6 +31,8 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 	switch post.Type {
 	case database.MediaTypePhoto:
 		unsentCount := unsentPostsCount(ctx)
+		logger.With("unsent", unsentCount, "threshold", config.GroupThreshold).
+			Info("checking if grouping is needed")
 		if unsentCount > config.GroupThreshold {
 			logger.With("count", unsentCount).Info("grouping photos for media group")
 			extraPosts, _ := db.Post.GetAdditionalUnsentByType(ctx, database.MediaTypePhoto, post.ID)

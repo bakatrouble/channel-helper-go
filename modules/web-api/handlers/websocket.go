@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
+
 	"channel-helper-go/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/grbit/go-json"
 )
 
 var upgrader = websocket.Upgrader{

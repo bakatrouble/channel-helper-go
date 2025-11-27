@@ -115,15 +115,38 @@ func ResizeImage(imageBytes []byte) ([]byte, error) {
 }
 
 func CompressJpeg(imageBytes []byte) ([]byte, error) {
-	var im image.Image
-	var err error
-
-	if im, _, err = image.Decode(bytes.NewReader(imageBytes)); err != nil {
+	imConfig, _, err := image.DecodeConfig(bytes.NewReader(imageBytes))
+	if err != nil {
 		return nil, err
 	}
-	buf := new(bytes.Buffer)
-	if err = jpeg.Encode(buf, im, &jpeg.Options{Quality: 85}); err != nil {
+	im, _, err := image.Decode(bytes.NewReader(imageBytes))
+	if err != nil {
 		return nil, err
+	}
+	width := uint(imConfig.Width)
+	height := uint(imConfig.Height)
+	if imConfig.Width+imConfig.Height > 10000 {
+		scale := float64(10000) / (float64(width) + float64(height))
+		width = uint(math.Floor(float64(imConfig.Width) * scale))
+		height = uint(math.Floor(float64(imConfig.Height) * scale))
+		im = resize.Thumbnail(width, height, im, resize.Lanczos3)
+		fmt.Printf("Resized image to %dx%d\n", width, height)
+	}
+	buf := new(bytes.Buffer)
+	for {
+		if err = jpeg.Encode(buf, im, &jpeg.Options{Quality: 95}); err != nil {
+			return nil, err
+		}
+		bufLen := len(buf.Bytes())
+		if bufLen > 10*1024*1024 {
+			buf.Reset()
+			width = width * 95 / 100
+			height = height * 95 / 100
+			im = resize.Thumbnail(width, height, im, resize.Lanczos3)
+			fmt.Printf("Buf is %d, resized image to %dx%d\n", bufLen, width, height)
+		} else {
+			break
+		}
 	}
 	return buf.Bytes(), nil
 }

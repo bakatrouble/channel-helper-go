@@ -59,7 +59,7 @@ type MessageID struct {
 
 type Settings struct {
 	bun.BaseModel  `bun:"table:settings,alias:s"`
-	GroupThreshold int `bun:",notnull"`
+	GroupThreshold int `bun:",notnull" json:"group_threshold"`
 }
 
 func (p *Post) BeforeAppendModel(ctx context.Context, query bun.Query) error {

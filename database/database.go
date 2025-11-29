@@ -6,12 +6,13 @@ import (
 	"channel-helper-go/database/schema"
 	"database/sql"
 	"fmt"
+	"log"
+	"log/slog"
+
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
 	"github.com/uptrace/bun/driver/sqliteshim"
 	"github.com/uptrace/bun/migrate"
-	"log"
-	"log/slog"
 )
 
 type Post = schema.Post
@@ -29,6 +30,7 @@ type DBStruct struct {
 	Post       *repositories.PostRepository
 	UploadTask *repositories.UploadTaskRepository
 	ImageHash  *repositories.ImageHashRepository
+	Settings   *repositories.SettingsRepository
 }
 
 func NewSQLDB(dbName string) (*sql.DB, error) {
@@ -56,6 +58,7 @@ func NewDBStruct(sqldb *sql.DB, verbose bool, logger *slog.Logger) (*DBStruct, e
 		Post:       repositories.NewPostRepository(db),
 		UploadTask: repositories.NewUploadTaskRepository(db),
 		ImageHash:  repositories.NewImageHashRepository(db),
+		Settings:   repositories.NewSettingsRepository(db),
 	}, nil
 }
 

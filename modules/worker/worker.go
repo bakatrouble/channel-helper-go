@@ -3,6 +3,7 @@ package worker
 import (
 	"channel-helper-go/database"
 	"channel-helper-go/database/database_utils"
+	"channel-helper-go/database/schema"
 	telegram_bot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/utils"
 	"context"
@@ -23,6 +24,12 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 
 	logger.With("id", post.ID).Info("sending post")
 
+	var settings *schema.Settings
+	if settings, err = db.Settings.Get(ctx, config); err != nil {
+		logger.With("id", post.ID).With("err", err).Error("getting settings")
+		return err
+	}
+
 	processedPosts := make([]*database.Post, 1)
 	processedPosts[0] = post
 
@@ -31,9 +38,9 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 	switch post.Type {
 	case database.MediaTypePhoto:
 		unsentCount := unsentPostsCount(ctx)
-		logger.With("unsent", unsentCount, "threshold", config.GroupThreshold).
+		logger.With("unsent", unsentCount, "threshold", settings.GroupThreshold).
 			Info("checking if grouping is needed")
-		if unsentCount > config.GroupThreshold {
+		if settings.GroupThreshold != 0 && unsentCount > settings.GroupThreshold {
 			logger.With("count", unsentCount).Info("grouping photos for media group")
 			extraPosts, _ := db.Post.GetAdditionalUnsentByType(ctx, database.MediaTypePhoto, post.ID)
 			media := make([]telego.InputMedia, 1)

@@ -2,6 +2,7 @@ package web_api
 
 import (
 	"channel-helper-go/database"
+	"channel-helper-go/database/schema"
 	"channel-helper-go/modules/web-api/handlers"
 	"channel-helper-go/utils"
 	"context"
@@ -112,6 +113,32 @@ func StartWebAPI(ctx context.Context) {
 			return
 		}
 		c.JSON(200, gin.H{"status": "success", "count": count})
+	})
+	g.GET("/settings", corsMiddleware, func(c *gin.Context) {
+		settings, err := db.Settings.Get(c)
+		if err != nil {
+			logger.With("err", err).Error("failed to get settings")
+			c.JSON(500, gin.H{"status": "error", "message": "Internal Server Error"})
+			return
+		}
+		c.JSON(200, gin.H{"status": "success", "settings": settings})
+	})
+	g.POST("/settings", corsMiddleware, func(c *gin.Context) {
+		var input schema.Settings
+		if err := c.BindJSON(&input); err != nil {
+			c.JSON(400, gin.H{"status": "error", "message": "Bad Request"})
+			return
+		}
+		if input.GroupThreshold < 0 {
+			c.JSON(400, gin.H{"status": "error", "message": "Bad Request"})
+			return
+		}
+		if err := db.Settings.Save(c, &input); err != nil {
+			logger.With("err", err).Error("failed to save settings")
+			c.JSON(500, gin.H{"status": "error", "message": "Internal Server Error"})
+			return
+		}
+		c.JSON(200, gin.H{"status": "success", "settings": input})
 	})
 
 	g2 := router.Group("")

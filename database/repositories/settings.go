@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"channel-helper-go/database/schema"
-	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
 	"database/sql"
 	"errors"
@@ -20,7 +20,7 @@ func NewSettingsRepository(db *bun.DB) *SettingsRepository {
 	}
 }
 
-func (r *SettingsRepository) Get(ctx context.Context, config *utils.Config) (*schema.Settings, error) {
+func (r *SettingsRepository) Get(ctx context.Context, config *cfg.Config) (*schema.Settings, error) {
 	var settings schema.Settings
 	if err := r.db.NewSelect().
 		Model(&settings).

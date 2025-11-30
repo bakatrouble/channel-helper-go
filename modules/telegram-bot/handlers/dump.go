@@ -3,6 +3,7 @@ package handlers
 import (
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"encoding/json"
 	"fmt"
 
@@ -13,7 +14,7 @@ import (
 
 func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 	db := ctx.Value("db").(*database.DBStruct)
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 	logger := ctx.Value("logger").(utils.Logger)
 
 	if gtfo(ctx, message) {

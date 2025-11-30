@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"slices"
 
 	"github.com/mymmrac/telego"
@@ -22,7 +22,7 @@ func reactToMessage(ctx *th.Context, message *telego.Message) {
 
 func gtfo(ctx *th.Context, message telego.Message) bool {
 	bot := ctx.Bot()
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 
 	if slices.Contains(config.AllowedSenderChats, message.Chat.ID) {
 		return false

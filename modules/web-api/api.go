@@ -5,6 +5,7 @@ import (
 	"channel-helper-go/database/schema"
 	"channel-helper-go/modules/web-api/handlers"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
 	"database/sql"
 	"errors"
@@ -24,7 +25,7 @@ import (
 )
 
 func StartWebAPI(ctx context.Context) {
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	sqldb := ctx.Value("sqldb").(*sql.DB)
 	hub := ctx.Value("hub").(*utils.Hub)
@@ -115,7 +116,7 @@ func StartWebAPI(ctx context.Context) {
 		c.JSON(200, gin.H{"status": "success", "count": count})
 	})
 	g.GET("/settings", corsMiddleware, func(c *gin.Context) {
-		settings, err := db.Settings.Get(c)
+		settings, err := db.Settings.Get(c, config)
 		if err != nil {
 			logger.With("err", err).Error("failed to get settings")
 			c.JSON(500, gin.H{"status": "error", "message": "Internal Server Error"})

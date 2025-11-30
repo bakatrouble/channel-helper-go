@@ -4,6 +4,7 @@ import (
 	"channel-helper-go/database"
 	"channel-helper-go/modules/telegram-bot/handlers"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
 	"database/sql"
 	"fmt"
@@ -29,7 +30,7 @@ func (b *botLogger) Errorf(format string, args ...interface{}) {
 }
 
 func CreateBot(ctx context.Context, logger utils.Logger) (*telego.Bot, error) {
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 
 	l := botLogger{logger, strings.NewReplacer(config.BotToken, "****")}
 
@@ -41,7 +42,7 @@ func CreateBot(ctx context.Context, logger utils.Logger) (*telego.Bot, error) {
 }
 
 func StartBot(ctx context.Context) {
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	sqldb := ctx.Value("sqldb").(*sql.DB)
 	hub := ctx.Value("hub").(*utils.Hub)

@@ -4,19 +4,21 @@ import (
 	"channel-helper-go/database"
 	"channel-helper-go/database/database_utils"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/DrSmithFr/go-console"
-	"github.com/alitto/pond/v2"
-	"github.com/vbauerster/mpb/v8"
-	"github.com/vbauerster/mpb/v8/decor"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"time"
+
+	"github.com/DrSmithFr/go-console"
+	"github.com/alitto/pond/v2"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 func ComputeHash(fileId string, directory string, callback func(*string)) {
@@ -38,7 +40,7 @@ func ComputeHash(fileId string, directory string, callback func(*string)) {
 func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 	ctx := context.Background()
 
-	config, err := utils.ParseConfig(cmd.Input.Option("config"))
+	config, err := cfg.ParseConfig(cmd.Input.Option("config"))
 	if err != nil {
 		fmt.Printf("Failed to parse config file: %v\n", err)
 		return go_console.ExitError

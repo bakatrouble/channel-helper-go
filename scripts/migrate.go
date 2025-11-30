@@ -3,15 +3,17 @@ package scripts
 import (
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
 	"fmt"
+
 	go_console "github.com/DrSmithFr/go-console"
 )
 
 func MigrateScript(cmd *go_console.Script) go_console.ExitCode {
 	ctx := context.Background()
 
-	config, err := utils.ParseConfig(cmd.Input.Option("config"))
+	config, err := cfg.ParseConfig(cmd.Input.Option("config"))
 	if err != nil {
 		_, _ = fmt.Fprintf(cmd, "Failed to parse config file: %v\n", err)
 		return go_console.ExitError
@@ -65,7 +67,7 @@ func MigrateScript(cmd *go_console.Script) go_console.ExitCode {
 func CreateGoMigrationScript(cmd *go_console.Script) go_console.ExitCode {
 	ctx := context.Background()
 
-	config, err := utils.ParseConfig(cmd.Input.Option("config"))
+	config, err := cfg.ParseConfig(cmd.Input.Option("config"))
 	if err != nil {
 		_, _ = fmt.Fprintf(cmd, "Failed to parse config file: %v\n", err)
 		return go_console.ExitError
@@ -106,7 +108,7 @@ func CreateGoMigrationScript(cmd *go_console.Script) go_console.ExitCode {
 func InitDBScript(cmd *go_console.Script) go_console.ExitCode {
 	ctx := context.Background()
 
-	config, err := utils.ParseConfig(cmd.Input.Option("config"))
+	config, err := cfg.ParseConfig(cmd.Input.Option("config"))
 	if err != nil {
 		_, _ = fmt.Fprintf(cmd, "Failed to parse config file: %v\n", err)
 		return go_console.ExitError

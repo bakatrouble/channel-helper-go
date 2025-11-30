@@ -1,9 +1,10 @@
-package utils
+package cfg
 
 import (
-	"github.com/goccy/go-yaml"
 	"os"
 	"time"
+
+	"github.com/goccy/go-yaml"
 )
 
 type Config struct {

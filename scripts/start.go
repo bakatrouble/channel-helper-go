@@ -7,18 +7,20 @@ import (
 	webapi "channel-helper-go/modules/web-api"
 	"channel-helper-go/modules/worker"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
-	"github.com/DrSmithFr/go-console"
 	"os"
 	"os/signal"
 	"sync"
+
+	"github.com/DrSmithFr/go-console"
 )
 
 func StartScript(cmd *go_console.Script) go_console.ExitCode {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	config, err := utils.ParseConfig(cmd.Input.Option("config"))
+	config, err := cfg.ParseConfig(cmd.Input.Option("config"))
 	if err != nil {
 		panic("Failed to parse config file: " + err.Error())
 	}

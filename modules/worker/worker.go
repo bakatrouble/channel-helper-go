@@ -6,6 +6,7 @@ import (
 	"channel-helper-go/database/schema"
 	telegram_bot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
 	"database/sql"
 	"sync"
@@ -16,7 +17,7 @@ import (
 )
 
 func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 	//hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
 	db := ctx.Value("db").(*database.DBStruct)
@@ -95,7 +96,7 @@ func unsentPostsCount(ctx context.Context) int {
 }
 
 func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 	db := ctx.Value("db").(*database.DBStruct)
 	logger := ctx.Value("logger").(utils.Logger)
 
@@ -115,7 +116,7 @@ func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
 }
 
 func StartWorker(ctx context.Context) {
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 	sqldb := ctx.Value("sqldb").(*sql.DB)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 

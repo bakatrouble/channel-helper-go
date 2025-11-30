@@ -5,6 +5,7 @@ import (
 	"channel-helper-go/database/database_utils"
 	telegram_bot "channel-helper-go/modules/telegram-bot"
 	"channel-helper-go/utils"
+	"channel-helper-go/utils/cfg"
 	"context"
 	"database/sql"
 	"errors"
@@ -19,7 +20,7 @@ import (
 )
 
 func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 	db := ctx.Value("db").(*database.DBStruct)
 	//hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
@@ -133,7 +134,7 @@ func StartUploader(ctx context.Context) {
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	hub := ctx.Value("hub").(*utils.Hub)
 	sqldb := ctx.Value("sqldb").(*sql.DB)
-	config := ctx.Value("config").(*utils.Config)
+	config := ctx.Value("config").(*cfg.Config)
 
 	defer wg.Done()
 

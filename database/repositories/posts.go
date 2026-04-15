@@ -269,6 +269,7 @@ func (r *PostRepository) DeleteByUploadID(ctx context.Context, uploadID string) 
 	var post schema.Post
 	if err = tx.NewSelect().
 		Model(&post).
+		Relation("ImageHash").
 		Where("upload_task_id = ?", uploadID).
 		Scan(ctx, &post); err == nil {
 
@@ -291,6 +292,7 @@ func (r *PostRepository) DeleteByUploadID(ctx context.Context, uploadID string) 
 	var uploadTask schema.UploadTask
 	if err = tx.NewSelect().
 		Model(&uploadTask).
+		Relation("ImageHash").
 		Where("id = ?", uploadID).
 		Scan(ctx, &uploadTask); err == nil {
 

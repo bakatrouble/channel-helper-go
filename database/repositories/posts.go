@@ -260,29 +260,53 @@ func (r *PostRepository) GetFileIDs(ctx context.Context) (map[string]bool, error
 }
 
 func (r *PostRepository) DeleteByUploadID(ctx context.Context, uploadID string) error {
+	var tx bun.Tx
 	var err error
+	if tx, err = r.db.BeginTx(ctx, nil); err != nil {
+		return err
+	}
 
 	var post schema.Post
-	if err = r.db.NewSelect().
+	if err = tx.NewSelect().
 		Model(&post).
 		Where("upload_task_id = ?", uploadID).
 		Scan(ctx, &post); err == nil {
-		if _, err = r.db.NewDelete().
+
+		if post.ImageHash != nil && post.ImageHash.ID != 0 {
+			if _, err = tx.NewDelete().Model(post.ImageHash).WherePK().Exec(ctx); err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return rollbackIfError(err, tx)
+			}
+		}
+
+		if _, err = tx.NewDelete().
 			Model((*schema.Post)(nil)).
 			Where("upload_task_id = ?", uploadID).
 			Exec(ctx); err != nil {
-			return err
+			return rollbackIfError(err, tx)
 		}
 	} else if !errors.Is(err, sql.ErrNoRows) {
-		return err
+		return rollbackIfError(err, tx)
 	}
 
-	if _, err = r.db.NewDelete().
-		Model((*schema.UploadTask)(nil)).
+	var uploadTask schema.UploadTask
+	if err = tx.NewSelect().
+		Model(&uploadTask).
 		Where("id = ?", uploadID).
-		Exec(ctx); err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
+		Scan(ctx, &uploadTask); err == nil {
+
+		if uploadTask.ImageHash != nil && uploadTask.ImageHash.ID != 0 {
+			if _, err = tx.NewDelete().Model(uploadTask.ImageHash).WherePK().Exec(ctx); err != nil && !errors.Is(err, sql.ErrNoRows) {
+				return rollbackIfError(err, tx)
+			}
+		}
+
+		if _, err = tx.NewDelete().
+			Model((*schema.UploadTask)(nil)).
+			Where("id = ?", uploadID).
+			Exec(ctx); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return rollbackIfError(err, tx)
+		}
 	}
 
-	return nil
+	return tx.Commit()
 }

@@ -98,3 +98,27 @@ func InternalSendHandler(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"status": "ok", "hash": hash, "upload_id": task.ID})
 }
+
+type InternalDeletePayload struct {
+	UploadID string `json:"upload_id"`
+}
+
+func InternalDeleteHandler(c *gin.Context) {
+	db := c.MustGet("db").(*database.DBStruct)
+	logger := c.MustGet("logger").(utils.Logger)
+
+	var payload InternalDeletePayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(400, gin.H{"status": "error", "message": "Invalid payload"})
+		logger.With("err", err).Error("invalid payload")
+		return
+	}
+
+	if err := db.Post.DeleteByUploadID(c, payload.UploadID); err != nil {
+		logger.With("err", err).Error("failed to delete upload")
+		c.JSON(500, gin.H{"status": "error", "message": "Failed to delete upload"})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": "ok", "upload_id": payload.UploadID})
+}

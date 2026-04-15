@@ -63,6 +63,17 @@ func StartWebAPI(ctx context.Context) {
 		c.Set("cors", corsMiddleware)
 	}
 
+	internalMethodMiddleware := func(c *gin.Context) {
+		ip := net.ParseIP(c.ClientIP())
+		if ip == nil || !ip.IsLoopback() {
+			c.JSON(403, gin.H{"status": "error", "message": "Forbidden"})
+			c.Abort()
+			return
+		}
+		setContextValues(c)
+		c.Next()
+	}
+
 	router, _ := graceful.Default(
 		graceful.WithAddr(fmt.Sprintf("127.0.0.1:%d", config.ApiPort)),
 	)
@@ -75,16 +86,8 @@ func StartWebAPI(ctx context.Context) {
 
 	router.Use(static.Serve("/miniapp", static.LocalFile("./miniapp/dist", true)))
 
-	router.POST("/internalSend", func(c *gin.Context) {
-		ip := net.ParseIP(c.ClientIP())
-		if ip == nil || !ip.IsLoopback() {
-			c.JSON(403, gin.H{"status": "error", "message": "Forbidden"})
-			c.Abort()
-			return
-		}
-		setContextValues(c)
-		c.Next()
-	}, handlers.InternalSendHandler)
+	router.POST("/internalSend", internalMethodMiddleware, handlers.InternalSendHandler)
+	router.DELETE("/internalDelete", internalMethodMiddleware, handlers.InternalDeleteHandler)
 
 	g := router.Group("/:api_key")
 

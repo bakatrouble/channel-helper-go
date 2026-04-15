@@ -35,6 +35,7 @@ type Post struct {
 	ImageHashID   *int64
 	ImageHash     *ImageHash   `bun:"rel:belongs-to,join:image_hash_id=id"`
 	MessageIDs    []*MessageID `bun:"rel:has-many,join:id=post_id"`
+	UploadTaskID  *string
 }
 
 type UploadTask struct {

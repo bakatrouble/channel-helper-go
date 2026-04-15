@@ -258,3 +258,31 @@ func (r *PostRepository) GetFileIDs(ctx context.Context) (map[string]bool, error
 	}
 	return fileIdSet, nil
 }
+
+func (r *PostRepository) DeleteByUploadID(ctx context.Context, uploadID string) error {
+	var err error
+
+	var post schema.Post
+	if err = r.db.NewSelect().
+		Model(&post).
+		Where("upload_id = ?", uploadID).
+		Scan(ctx, &post); err == nil {
+		if _, err = r.db.NewDelete().
+			Model((*schema.Post)(nil)).
+			Where("upload_id = ?", uploadID).
+			Exec(ctx); err != nil {
+			return err
+		}
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+
+	if _, err = r.db.NewDelete().
+		Model((*schema.UploadTask)(nil)).
+		Where("id = ?", uploadID).
+		Exec(ctx); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+
+	return nil
+}

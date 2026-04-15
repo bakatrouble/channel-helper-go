@@ -265,11 +265,11 @@ func (r *PostRepository) DeleteByUploadID(ctx context.Context, uploadID string) 
 	var post schema.Post
 	if err = r.db.NewSelect().
 		Model(&post).
-		Where("upload_id = ?", uploadID).
+		Where("upload_task_id = ?", uploadID).
 		Scan(ctx, &post); err == nil {
 		if _, err = r.db.NewDelete().
 			Model((*schema.Post)(nil)).
-			Where("upload_id = ?", uploadID).
+			Where("upload_task_id = ?", uploadID).
 			Exec(ctx); err != nil {
 			return err
 		}

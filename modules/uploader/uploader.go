@@ -40,8 +40,9 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	}
 
 	post := &database.Post{
-		Type:        task.Type,
-		ImageHashID: task.ImageHashID,
+		Type:         task.Type,
+		ImageHashID:  task.ImageHashID,
+		UploadTaskID: &task.ID,
 	}
 	replyMarkup := tu.InlineKeyboard(
 		tu.InlineKeyboardRow(

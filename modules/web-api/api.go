@@ -75,7 +75,7 @@ func StartWebAPI(ctx context.Context) {
 	}
 
 	router, _ := graceful.Default(
-		graceful.WithAddr(fmt.Sprintf("127.0.0.1:%d", config.ApiPort)),
+		graceful.WithAddr(fmt.Sprintf("[::]:%d", config.ApiPort)),
 	)
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB

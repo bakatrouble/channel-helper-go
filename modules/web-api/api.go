@@ -9,7 +9,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"net"
 	"slices"
 	"sync"
@@ -31,7 +30,7 @@ func StartWebAPI(ctx context.Context) {
 	hub := ctx.Value("hub").(*utils.Hub)
 
 	logger := utils.NewLogger(config.DbName, "web-api")
-	logger.With("host", "127.0.0.1").With("port", config.ApiPort).Info("starting web api")
+	logger.With("bind", config.ApiBind).Info("starting web api")
 
 	defer wg.Done()
 
@@ -75,7 +74,7 @@ func StartWebAPI(ctx context.Context) {
 	}
 
 	router, _ := graceful.Default(
-		graceful.WithAddr(fmt.Sprintf("[::]:%d", config.ApiPort)),
+		graceful.WithAddr(config.ApiBind),
 	)
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
 	router.MaxMultipartMemory = 8 << 20 // 8 MiB

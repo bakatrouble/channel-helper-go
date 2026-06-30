@@ -15,6 +15,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN apk add --no-cache file-dev ffmpeg
 WORKDIR /
 COPY --from=builder /app/channel-helper-go /channel-helper-go
+COPY --from=builder /app/miniapp/dist /miniapp/dist
 RUN mkdir /database /logs && chown appuser:appgroup /database /logs
 USER appuser:appgroup
 ENTRYPOINT ["/channel-helper-go"]

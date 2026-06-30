@@ -16,7 +16,7 @@ type Config struct {
 	GroupThreshold     int           `yaml:"group_threshold"`
 	WithApi            bool          `yaml:"with_api"`
 	ApiKey             string        `yaml:"api_key"`
-	ApiPort            int           `yaml:"api_port"`
+	ApiBind            string        `yaml:"api_bind"`
 	UploadChatId       int64         `yaml:"upload_chat_id"`
 	Production         bool          `yaml:"production"`
 }

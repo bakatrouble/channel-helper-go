@@ -64,7 +64,7 @@ func StartWebAPI(ctx context.Context) {
 
 	internalMethodMiddleware := func(c *gin.Context) {
 		ip := net.ParseIP(c.ClientIP())
-		if ip == nil || !ip.IsLoopback() || !ip.IsPrivate() {
+		if ip == nil || !(ip.IsLoopback() || ip.IsPrivate()) {
 			c.JSON(403, gin.H{"status": "error", "message": "Forbidden"})
 			c.Abort()
 			return

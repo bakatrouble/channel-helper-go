@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"channel-helper-go/utils/tint"
 	"context"
 	"fmt"
 	"log/slog"
@@ -39,10 +38,12 @@ func NewLogger(name string, module string) Logger {
 	createLogsDir(name)
 	level := slog.LevelDebug
 
-	consoleHandler := tint.NewHandler(os.Stdout, &tint.Options{
-		Level:  level,
-		Prefix: fmt.Sprintf("[%s]", module),
-	})
+	//consoleHandler := tint.NewHandler(os.Stdout, &tint.Options{
+	//	Level:  level,
+	//	Prefix: fmt.Sprintf("[%s]", module),
+	//})
+	consoleHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}).
+		WithAttrs([]slog.Attr{slog.String("module", module)})
 
 	var handlers []slogx.Middleware
 

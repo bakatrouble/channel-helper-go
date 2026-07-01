@@ -29,10 +29,10 @@ RUN --mount=type=cache,target=./node_modules \
 
 FROM debian:trixie-slim
 LABEL org.opencontainers.image.source=https://github.com/bakatrouble/channel-helper-go
-RUN apt update && apt install -y libmagic1t64 ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y ca-certificates libmagic1t64 ffmpeg && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=go-builder /app/channel-helper-go /app/channel-helper-go
-COPY --from=frontend-builder /app /app/miniapp/dist
+COPY --from=frontend-builder /app/dist /app/miniapp/dist
 COPY --from=rust-builder /app/libimagehash.so /app/lib/libimagehash.so
 RUN mkdir /app/database /app/logs
 ENTRYPOINT ["/app/channel-helper-go"]

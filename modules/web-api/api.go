@@ -28,6 +28,7 @@ func StartWebAPI(ctx context.Context) {
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	sqldb := ctx.Value("sqldb").(*sql.DB)
 	hub := ctx.Value("hub").(*utils.Hub)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 
 	logger := utils.NewLogger(config.DbName, "web-api")
 	logger.With("bind", config.ApiBind).Info("starting web api")
@@ -87,6 +88,7 @@ func StartWebAPI(ctx context.Context) {
 
 	router.POST("/internalSend", internalMethodMiddleware, handlers.InternalSendHandler)
 	router.DELETE("/internalDelete", internalMethodMiddleware, handlers.InternalDeleteHandler)
+	router.GET("/metrics", gin.WrapH(metrics.PromHandler()))
 
 	g := router.Group("/:api_key")
 

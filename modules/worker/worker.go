@@ -99,6 +99,7 @@ func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
 	config := ctx.Value("config").(*cfg.Config)
 	db := ctx.Value("db").(*database.DBStruct)
 	logger := ctx.Value("logger").(utils.Logger)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 
 	post, err := db.Post.GetRandomUnsent(ctx)
 	if err != nil {
@@ -110,15 +111,18 @@ func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
 		return
 	}
 	_ = sendPost(post, bot, ctx)
-	logger.With("count", unsentPostsCount(ctx)).
+	unsentPosts := unsentPostsCount(ctx)
+	logger.With("count", unsentPosts).
 		With("wait", config.Interval).
 		Info("unsent posts remaining")
+	metrics.SetPostsUnsent(unsentPosts)
 }
 
 func StartWorker(ctx context.Context) {
 	config := ctx.Value("config").(*cfg.Config)
 	sqldb := ctx.Value("sqldb").(*sql.DB)
 	wg := ctx.Value("wg").(*sync.WaitGroup)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 
 	defer wg.Done()
 
@@ -136,7 +140,9 @@ func StartWorker(ctx context.Context) {
 	ctx = context.WithValue(ctx, "db", db)
 
 	logger.Info("starting worker")
-	logger.With("count", unsentPostsCount(ctx)).With("wait", config.Interval).Info("unsent posts remaining")
+	unsentPosts := unsentPostsCount(ctx)
+	logger.With("count", unsentPosts).With("wait", config.Interval).Info("unsent posts remaining")
+	metrics.SetPostsUnsent(unsentPosts)
 
 	bot, err := telegram_bot.CreateBot(ctx, logger)
 	if err != nil {

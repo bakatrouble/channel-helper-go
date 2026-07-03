@@ -38,6 +38,9 @@ func StartScript(cmd *go_console.Script) go_console.ExitCode {
 	}
 	ctx = context.WithValue(ctx, "sqldb", sqldb)
 
+	metrics := utils.NewMetrics()
+	ctx = context.WithValue(ctx, "metrics", metrics)
+
 	go telegrambot.StartBot(ctx)
 	wg.Add(1)
 	go worker.StartWorker(ctx)

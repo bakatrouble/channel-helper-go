@@ -38,7 +38,7 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 	inputFile := telego.InputFile{FileID: post.FileID}
 	switch post.Type {
 	case database.MediaTypePhoto:
-		unsentCount := unsentPostsCount(ctx)
+		unsentCount, _ := db.Post.UnsentCount(ctx)
 		logger.With("unsent", unsentCount, "threshold", settings.GroupThreshold).
 			Info("checking if grouping is needed")
 		if settings.GroupThreshold != 0 && unsentCount > settings.GroupThreshold {
@@ -89,12 +89,6 @@ func sendPost(post *database.Post, bot *telego.Bot, ctx context.Context) error {
 	return nil
 }
 
-func unsentPostsCount(ctx context.Context) int {
-	db := ctx.Value("db").(*database.DBStruct)
-	cnt, _ := db.Post.UnsentCount(ctx)
-	return cnt
-}
-
 func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
 	config := ctx.Value("config").(*cfg.Config)
 	db := ctx.Value("db").(*database.DBStruct)
@@ -111,7 +105,7 @@ func fetchAndSendPost(bot *telego.Bot, ctx context.Context) {
 		return
 	}
 	_ = sendPost(post, bot, ctx)
-	unsentPosts := unsentPostsCount(ctx)
+	unsentPosts, _ := db.Post.UnsentCount(ctx)
 	logger.With("count", unsentPosts).
 		With("wait", config.Interval).
 		Info("unsent posts remaining")
@@ -140,9 +134,9 @@ func StartWorker(ctx context.Context) {
 	ctx = context.WithValue(ctx, "db", db)
 
 	logger.Info("starting worker")
-	unsentPosts := unsentPostsCount(ctx)
+	unsentPosts, _ := db.Post.UnsentCount(ctx)
 	logger.With("count", unsentPosts).With("wait", config.Interval).Info("unsent posts remaining")
-	metrics.SetPostsUnsent(unsentPosts)
+	metrics.SetPostsUnsentFromDB(ctx)
 
 	bot, err := telegram_bot.CreateBot(ctx, logger)
 	if err != nil {

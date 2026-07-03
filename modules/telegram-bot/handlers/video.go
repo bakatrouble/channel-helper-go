@@ -12,6 +12,7 @@ func VideoHandler(ctx *th.Context, message telego.Message) error {
 	db, _ := ctx.Value("db").(*database.DBStruct)
 	//hub, _ := ctx.Value("hub").(*utils.Hub)
 	logger, _ := ctx.Value("logger").(utils.Logger)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 
 	if gtfo(ctx, message) {
 		return nil
@@ -34,6 +35,7 @@ func VideoHandler(ctx *th.Context, message telego.Message) error {
 		logger.With("err", err).Error("failed to create post")
 		return err
 	}
+	metrics.SetPostsUnsentFromDB(ctx)
 
 	reactToMessage(ctx, &message)
 

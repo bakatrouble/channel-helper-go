@@ -88,6 +88,7 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 	db := ctx.Value("db").(*database.DBStruct)
 	//hub, _ := ctx.Value("hub").(*utils.Hub)
 	logger, _ := ctx.Value("logger").(utils.Logger)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 
 	logger.With("chat_id", message.Chat.ID, "message_id", message.MessageID).Info("deleting post")
 
@@ -105,6 +106,7 @@ func deleteByMessage(ctx *th.Context, message *telego.Message) (error, error) {
 		logger.With("err", err).Error("failed to delete post")
 		return nil, err
 	}
+	metrics.SetPostsUnsentFromDB(ctx)
 
 	//hub.PostDeleted <- post
 	logger.With("id", post.ID).Info("deleted post")

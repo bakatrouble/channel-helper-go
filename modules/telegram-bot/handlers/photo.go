@@ -16,6 +16,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 	//hub, _ := ctx.Value("hub").(*utils.Hub)
 	bot := ctx.Bot()
 	logger, _ := ctx.Value("logger").(utils.Logger)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 
 	logger.Info("PhotoHandler called")
 
@@ -105,6 +106,7 @@ func PhotoHandler(ctx *th.Context, message telego.Message) error {
 		},
 	}
 	err = db.Post.Create(ctx, post)
+	metrics.SetPostsUnsentFromDB(ctx)
 	reactToMessage(ctx, &message)
 
 	//hub.PostCreated <- post

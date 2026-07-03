@@ -24,6 +24,7 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	db := ctx.Value("db").(*database.DBStruct)
 	//hub := ctx.Value("hub").(*utils.Hub)
 	logger := ctx.Value("logger").(utils.Logger)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 	var err error
 
 	task, err := db.UploadTask.GetByID(ctx, taskId)
@@ -127,6 +128,8 @@ func processTask(taskId string, bot *telego.Bot, ctx context.Context) error {
 	logger.With("post_id", post.ID).
 		With("task_id", task.ID).
 		Info("created post from upload task")
+
+	metrics.SetPostsUnsentFromDB(ctx)
 
 	return nil
 }

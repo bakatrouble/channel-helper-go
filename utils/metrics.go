@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"channel-helper-go/database"
+	"context"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,6 +17,13 @@ type Metrics struct {
 
 func (m *Metrics) SetPostsUnsent(postsUnsent int) {
 	m.postsUnsent.Set(float64(postsUnsent))
+}
+
+func (m *Metrics) SetPostsUnsentFromDB(ctx context.Context) {
+	db := ctx.Value("db").(*database.DBStruct)
+	if cnt, err := db.Post.UnsentCount(ctx); err == nil {
+		m.SetPostsUnsent(cnt)
+	}
 }
 
 func (m *Metrics) PromHandler() http.Handler {

@@ -46,6 +46,7 @@ func StartBot(ctx context.Context) {
 	wg := ctx.Value("wg").(*sync.WaitGroup)
 	sqldb := ctx.Value("sqldb").(*sql.DB)
 	hub := ctx.Value("hub").(*utils.Hub)
+	metrics := ctx.Value("metrics").(*utils.Metrics)
 
 	logger := utils.NewLogger(config.DbName, "telegram-bot")
 	logger.Info("starting telegram bot")
@@ -80,6 +81,7 @@ func StartBot(ctx context.Context) {
 		ctx = ctx.WithValue("hub", hub)
 		ctx = ctx.WithValue("logger", logger)
 		ctx = ctx.WithValue("bot", bot)
+		ctx = ctx.WithValue("metrics", metrics)
 		return ctx.Next(update)
 	})
 	bh.HandleMessage(handlers.PhotoHandler, messageWithPhoto)

@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"bytes"
 	"channel-helper-go/database"
 	"channel-helper-go/utils"
 	"channel-helper-go/utils/cfg"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 
@@ -30,11 +32,16 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 			Type:       p.Type,
 			FileID:     p.FileID,
 			MessageIds: make([]int, 0, len(p.MessageIDs)),
+			Messages:   make([]utils.ImportMessage, 0, len(p.MessageIDs)),
 			Processed:  p.IsSent,
 			Datetime:   p.CreatedAt,
 		}
 		for _, msgID := range p.MessageIDs {
 			item.MessageIds = append(item.MessageIds, msgID.MessageID)
+			item.Messages = append(item.Messages, utils.ImportMessage{
+				ChatID:    msgID.ChatID,
+				MessageID: msgID.MessageID,
+			})
 		}
 		dump = append(dump, item)
 	}
@@ -46,8 +53,25 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 		})
 		return err
 	}
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	if _, err := gz.Write(j); err != nil {
+		_ = gz.Close()
+		_, _ = ctx.Bot().SendMessage(ctx, &telego.SendMessageParams{
+			ChatID: message.Chat.ChatID(),
+			Text:   "Failed to compress dump data",
+		})
+		return err
+	}
+	if err := gz.Close(); err != nil {
+		_, _ = ctx.Bot().SendMessage(ctx, &telego.SendMessageParams{
+			ChatID: message.Chat.ChatID(),
+			Text:   "Failed to compress dump data",
+		})
+		return err
+	}
 	_, err = ctx.Bot().SendDocument(ctx, tu.Document(message.Chat.ChatID(),
-		tu.FileFromBytes(j, fmt.Sprintf("%s.json", config.DbName)),
+		tu.FileFromBytes(buf.Bytes(), fmt.Sprintf("%s.json.gz", config.DbName)),
 	))
 	return err
 }

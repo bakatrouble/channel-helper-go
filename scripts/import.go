@@ -1,13 +1,16 @@
 package scripts
 
 import (
+	"bytes"
 	"channel-helper-go/database"
 	"channel-helper-go/database/database_utils"
 	"channel-helper-go/utils"
 	"channel-helper-go/utils/cfg"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -69,6 +72,20 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 		return go_console.ExitError
 	}
 
+	// Support gzipped dumps (as produced by the dump handler, *.json.gz).
+	if len(dump) >= 2 && dump[0] == 0x1f && dump[1] == 0x8b {
+		gz, err := gzip.NewReader(bytes.NewReader(dump))
+		if err != nil {
+			fmt.Printf("Failed to open gzipped dump file: %v\n", err)
+			return go_console.ExitError
+		}
+		defer func() { _ = gz.Close() }()
+		if dump, err = io.ReadAll(gz); err != nil {
+			fmt.Printf("Failed to decompress dump file: %v\n", err)
+			return go_console.ExitError
+		}
+	}
+
 	var items []utils.ImportItem
 	if err = json.Unmarshal(dump, &items); err != nil {
 		fmt.Printf("Failed to parse dump file: %v\n", err)
@@ -128,11 +145,20 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 		if item.Processed {
 			post.SentAt = &now
 		}
-		for _, messageId := range item.MessageIds {
-			post.MessageIDs = append(post.MessageIDs, &database.MessageID{
-				ChatID:    config.AllowedSenderChats[0],
-				MessageID: messageId,
-			})
+		if len(item.Messages) > 0 {
+			for _, msg := range item.Messages {
+				post.MessageIDs = append(post.MessageIDs, &database.MessageID{
+					ChatID:    msg.ChatID,
+					MessageID: msg.MessageID,
+				})
+			}
+		} else {
+			for _, messageId := range item.MessageIds {
+				post.MessageIDs = append(post.MessageIDs, &database.MessageID{
+					ChatID:    config.AllowedSenderChats[0],
+					MessageID: messageId,
+				})
+			}
 		}
 		posts = append(posts, &post)
 		if item.Type == database.MediaTypePhoto {

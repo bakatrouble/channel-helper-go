@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/DrSmithFr/go-console"
@@ -152,16 +153,14 @@ func ImportScript(cmd *go_console.Script) go_console.ExitCode {
 					MessageID: msg.MessageID,
 				})
 			}
-		} else {
-			for _, messageId := range item.MessageIds {
-				post.MessageIDs = append(post.MessageIDs, &database.MessageID{
-					ChatID:    config.AllowedSenderChats[0],
-					MessageID: messageId,
-				})
-			}
 		}
 		posts = append(posts, &post)
-		if item.Type == database.MediaTypePhoto {
+		if hash := strings.TrimSpace(item.Hash); hash != "" &&
+			item.Type == database.MediaTypePhoto {
+			// Dumps carry previously computed hashes; trust them so
+			// imports work without the original image files on disk.
+			posts[len(posts)-1].ImageHash = &database.ImageHash{Hash: hash}
+		} else if item.Type == database.MediaTypePhoto {
 			hashTotal += 1
 			hashBar.SetTotal(hashTotal, false)
 			closurePost := posts[len(posts)-1]

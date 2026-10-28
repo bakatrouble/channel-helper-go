@@ -46,6 +46,19 @@ func main() {
 				Runner: scripts.ImportScript,
 			},
 			{
+				Name:        "dump",
+				Description: "Dump the project database to a JSON file (.gz suffix writes gzip)",
+				Options:     configOptions,
+				Arguments: []go_console.Argument{
+					{
+						Name:        "output",
+						Description: "Output dump file path",
+						Value:       argument.Required,
+					},
+				},
+				Runner: scripts.DumpScript,
+			},
+			{
 				Name:        "db:migrate",
 				Description: "Migrate the database to the latest version",
 				Options:     configOptions,

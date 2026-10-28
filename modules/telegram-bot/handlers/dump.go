@@ -29,15 +29,17 @@ func DumpDbHandler(ctx *th.Context, message telego.Message) error {
 	dump := make([]utils.ImportItem, 0, len(posts))
 	for _, p := range posts {
 		item := utils.ImportItem{
-			Type:       p.Type,
-			FileID:     p.FileID,
-			MessageIds: make([]int, 0, len(p.MessageIDs)),
-			Messages:   make([]utils.ImportMessage, 0, len(p.MessageIDs)),
-			Processed:  p.IsSent,
-			Datetime:   p.CreatedAt,
+			Type:      p.Type,
+			FileID:    p.FileID,
+			Messages:  make([]utils.ImportMessage, 0, len(p.MessageIDs)),
+			Processed: p.IsSent,
+			Datetime:  p.CreatedAt,
+		}
+		if p.ImageHash != nil {
+			hash := p.ImageHash.Hash
+			item.Hash = hash
 		}
 		for _, msgID := range p.MessageIDs {
-			item.MessageIds = append(item.MessageIds, msgID.MessageID)
 			item.Messages = append(item.Messages, utils.ImportMessage{
 				ChatID:    msgID.ChatID,
 				MessageID: msgID.MessageID,

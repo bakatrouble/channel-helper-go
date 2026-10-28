@@ -11,10 +11,10 @@ type ImportMessage struct {
 }
 
 type ImportItem struct {
-	Type       database.MediaType `json:"type"`
-	FileID     string             `json:"file_id"`
-	MessageIds []int              `json:"message_ids"`
-	Messages   []ImportMessage    `json:"messages,omitempty"`
-	Processed  bool               `json:"processed"`
-	Datetime   time.Time          `json:"datetime"`
+	Type      database.MediaType `json:"type"`
+	FileID    string             `json:"file_id"`
+	Messages  []ImportMessage    `json:"messages"`
+	Hash      string             `json:"hash"`
+	Processed bool               `json:"processed"`
+	Datetime  time.Time          `json:"datetime"`
 }
